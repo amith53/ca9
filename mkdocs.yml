@@ -1,0 +1,85 @@
+site_name: ca9
+site_description: Static & dynamic reachability analysis to cut CVE noise
+site_url: https://oha.github.io/ca9
+repo_url: https://github.com/oha/ca9
+repo_name: oha/ca9
+
+theme:
+  name: material
+  logo: assets/ca9.png
+  favicon: assets/ca9.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+  - User Guide:
+      - CLI Reference: guide/cli.md
+      - Supported Formats: guide/formats.md
+      - Dynamic Analysis: guide/coverage.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Verdict Engine: architecture/engine.md
+      - Analysis Pipeline: architecture/analysis.md
+      - Parsers: architecture/parsers.md
+  - API Reference:
+      - Models: api/models.md
+      - Engine: api/engine.md
+      - Scanner: api/scanner.md
+      - Analysis: api/analysis.md
+      - Parsers: api/parsers.md
+      - Report: api/report.md
+  - Demo: demo.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/oha/ca9

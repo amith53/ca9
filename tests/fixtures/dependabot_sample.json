@@ -1,0 +1,36 @@
+[
+  {
+    "number": 1,
+    "security_advisory": {
+      "ghsa_id": "GHSA-1234-abcd-5678",
+      "summary": "SSRF in requests",
+      "description": "Requests library is vulnerable to SSRF.",
+      "severity": "high"
+    },
+    "security_vulnerability": {
+      "package": {"ecosystem": "pip", "name": "requests"},
+      "vulnerable_version_range": ">= 2.0, < 2.20.0"
+    },
+    "dependency": {
+      "package": {"ecosystem": "pip", "name": "requests"},
+      "manifest_path": "requirements.txt"
+    }
+  },
+  {
+    "number": 2,
+    "security_advisory": {
+      "ghsa_id": "GHSA-5678-efgh-9012",
+      "summary": "Code execution in PyYAML",
+      "description": "PyYAML yaml.load() allows arbitrary code execution.",
+      "severity": "critical"
+    },
+    "security_vulnerability": {
+      "package": {"ecosystem": "pip", "name": "PyYAML"},
+      "vulnerable_version_range": "< 5.4"
+    },
+    "dependency": {
+      "package": {"ecosystem": "pip", "name": "PyYAML"},
+      "manifest_path": "requirements.txt"
+    }
+  }
+]

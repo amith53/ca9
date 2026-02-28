@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ca9"
+version = "0.1.0"
+description = "Reduce false-positive CVE alerts by checking whether vulnerable dependency code is actually reachable"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MPL-2.0"
+keywords = ["security", "sca", "cve", "vulnerability", "reachability", "snyk", "dependabot"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+cli = ["click>=8.0"]
+dev = ["pytest>=7.0", "click>=8.0", "ruff>=0.4", "tox>=4", "pre-commit>=3.0", "skylos>=0.5"]
+
+[project.scripts]
+ca9 = "ca9.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ca9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",    # line too long — handled by formatter
+    "SIM108",  # ternary operator — explicit if/else often more readable
+    "SIM102",  # nested if — sometimes clearer than combined conditions
+    "UP038",   # X | Y in isinstance — requires Python 3.10+ runtime
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ca9"]

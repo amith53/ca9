@@ -1,0 +1,38 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "SNYK-PYTHON-REQUESTS-1234567",
+      "packageName": "requests",
+      "version": "2.19.1",
+      "severity": "high",
+      "title": "Session fixation vulnerability",
+      "description": "Requests before 2.20.0 sends cookies in redirects to different hosts."
+    },
+    {
+      "id": "SNYK-PYTHON-PYYAML-590151",
+      "packageName": "PyYAML",
+      "version": "5.3",
+      "severity": "critical",
+      "title": "Arbitrary code execution",
+      "description": "PyYAML before 5.4 is vulnerable to arbitrary code execution via yaml.load()."
+    },
+    {
+      "id": "SNYK-PYTHON-PILLOW-1319592",
+      "packageName": "Pillow",
+      "version": "8.1.0",
+      "severity": "medium",
+      "title": "Buffer overflow in Convert",
+      "description": "Pillow before 8.2.0 has a buffer overflow in Convert.c."
+    },
+    {
+      "id": "SNYK-PYTHON-UNUSED-PKG-000001",
+      "packageName": "some-unused-package",
+      "version": "1.0.0",
+      "severity": "low",
+      "title": "Hypothetical vuln in unused package",
+      "description": "This package is not imported anywhere."
+    }
+  ],
+  "projectName": "my-project",
+  "packageManager": "pip"
+}

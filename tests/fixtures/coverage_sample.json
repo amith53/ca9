@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "version": "7.3.2",
+    "timestamp": "2024-01-15T10:30:00",
+    "format": 3
+  },
+  "files": {
+    "/usr/lib/python3.10/site-packages/requests/api.py": {
+      "executed_lines": [1, 5, 10, 15, 20],
+      "summary": {"covered_lines": 5, "num_statements": 50}
+    },
+    "/usr/lib/python3.10/site-packages/requests/sessions.py": {
+      "executed_lines": [1, 2, 3],
+      "summary": {"covered_lines": 3, "num_statements": 100}
+    },
+    "/usr/lib/python3.10/site-packages/yaml/__init__.py": {
+      "executed_lines": [],
+      "summary": {"covered_lines": 0, "num_statements": 30}
+    },
+    "/home/user/myproject/app.py": {
+      "executed_lines": [1, 2, 3, 4, 5, 10, 15],
+      "summary": {"covered_lines": 7, "num_statements": 20}
+    }
+  }
+}
