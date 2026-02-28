@@ -296,7 +296,7 @@ def _scan_package_for_name(
                     isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef)
                     and node.name == class_name
                 ):
-                    rel = fpath[len(source_dir):]
+                    rel = fpath[len(source_dir) :]
                     if rel.startswith("/"):
                         rel = rel[1:]
                     if rel.endswith(".py"):

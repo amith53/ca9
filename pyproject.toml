@@ -46,10 +46,9 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 ignore = [
-    "E501",    # line too long — handled by formatter
-    "SIM108",  # ternary operator — explicit if/else often more readable
-    "SIM102",  # nested if — sometimes clearer than combined conditions
-    "UP038",   # X | Y in isinstance — requires Python 3.10+ runtime
+    "E501",
+    "SIM108",
+    "SIM102",
 ]
 
 [tool.ruff.lint.isort]
