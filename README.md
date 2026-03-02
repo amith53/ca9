@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/ca9.png" alt="ca9 — CVE reachability analysis for Python" width="400">
+  <img src="https://raw.githubusercontent.com/duriantaco/ca9/main/assets/ca9.png" alt="ca9 — CVE reachability analysis for Python" width="400">
 </p>
 
 <h1 align="center">ca9</h1>
