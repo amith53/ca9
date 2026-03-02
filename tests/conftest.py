@@ -33,3 +33,13 @@ def dependabot_path():
 @pytest.fixture
 def coverage_path():
     return FIXTURES_DIR / "coverage_sample.json"
+
+
+@pytest.fixture
+def trivy_path():
+    return FIXTURES_DIR / "trivy_sample.json"
+
+
+@pytest.fixture
+def pip_audit_path():
+    return FIXTURES_DIR / "pip_audit_sample.json"

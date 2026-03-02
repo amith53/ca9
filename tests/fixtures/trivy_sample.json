@@ -1,0 +1,45 @@
+{
+  "SchemaVersion": 2,
+  "Results": [
+    {
+      "Target": "requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2023-32681",
+          "PkgName": "requests",
+          "InstalledVersion": "2.28.0",
+          "FixedVersion": "2.31.0",
+          "Severity": "MEDIUM",
+          "Title": "Unintended leak of Proxy-Authorization header",
+          "Description": "Requests is a HTTP library. Since Requests 2.3.0, Requests has been leaking Proxy-Authorization headers."
+        },
+        {
+          "VulnerabilityID": "CVE-2022-42969",
+          "PkgName": "py",
+          "InstalledVersion": "1.11.0",
+          "Severity": "HIGH",
+          "Title": "ReDoS in py.path.svnwc",
+          "Description": "The py library through 1.11.0 allows remote attackers to conduct a ReDoS."
+        }
+      ]
+    },
+    {
+      "Target": "Pipfile.lock",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2023-37920",
+          "PkgName": "certifi",
+          "InstalledVersion": "2022.12.7",
+          "FixedVersion": "2023.07.22",
+          "Severity": "CRITICAL",
+          "Title": "Removal of e-Tugra root certificate",
+          "Description": "Certifi 2023.07.22 removes root certificates from e-Tugra."
+        }
+      ]
+    }
+  ]
+}

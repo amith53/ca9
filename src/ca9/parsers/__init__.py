@@ -5,12 +5,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .dependabot import DependabotParser
+from .pip_audit import PipAuditParser
 from .snyk import SnykParser
+from .trivy import TrivyParser
 
 if TYPE_CHECKING:
     from .base import SCAParser
 
-_PARSERS: list[type[SCAParser]] = [SnykParser, DependabotParser]
+_PARSERS: list[type[SCAParser]] = [SnykParser, DependabotParser, TrivyParser, PipAuditParser]
 
 
 def detect_parser(path: Path) -> SCAParser:

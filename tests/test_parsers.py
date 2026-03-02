@@ -6,7 +6,9 @@ import json
 
 from ca9.parsers import detect_parser
 from ca9.parsers.dependabot import DependabotParser
+from ca9.parsers.pip_audit import PipAuditParser
 from ca9.parsers.snyk import SnykParser
+from ca9.parsers.trivy import TrivyParser
 
 
 class TestSnykParser:
@@ -182,6 +184,154 @@ class TestDependabotEdgeCases:
         assert not DependabotParser().can_parse({"key": "val"})
 
 
+class TestTrivyParser:
+    def test_can_parse_trivy(self, trivy_path):
+        data = json.loads(trivy_path.read_text())
+        parser = TrivyParser()
+        assert parser.can_parse(data)
+
+    def test_cannot_parse_snyk(self, snyk_path):
+        data = json.loads(snyk_path.read_text())
+        parser = TrivyParser()
+        assert not parser.can_parse(data)
+
+    def test_parse_trivy_vulns(self, trivy_path):
+        data = json.loads(trivy_path.read_text())
+        parser = TrivyParser()
+        vulns = parser.parse(data)
+        assert len(vulns) == 3
+        ids = {v.id for v in vulns}
+        assert "CVE-2023-32681" in ids
+        assert "CVE-2022-42969" in ids
+        assert "CVE-2023-37920" in ids
+
+    def test_severity_lowercased(self, trivy_path):
+        data = json.loads(trivy_path.read_text())
+        vulns = TrivyParser().parse(data)
+        for v in vulns:
+            assert v.severity == v.severity.lower()
+
+    def test_deduplicates(self):
+        data = {
+            "Results": [
+                {
+                    "Vulnerabilities": [
+                        {
+                            "VulnerabilityID": "CVE-1",
+                            "PkgName": "foo",
+                            "InstalledVersion": "1.0",
+                            "Severity": "HIGH",
+                            "Title": "t",
+                        },
+                    ],
+                },
+                {
+                    "Vulnerabilities": [
+                        {
+                            "VulnerabilityID": "CVE-1",
+                            "PkgName": "foo",
+                            "InstalledVersion": "1.0",
+                            "Severity": "HIGH",
+                            "Title": "t",
+                        },
+                    ],
+                },
+            ],
+        }
+        vulns = TrivyParser().parse(data)
+        assert len(vulns) == 1
+
+    def test_skips_empty_ids(self):
+        data = {
+            "Results": [
+                {
+                    "Vulnerabilities": [
+                        {"VulnerabilityID": "", "PkgName": "foo", "InstalledVersion": "1.0"},
+                        {
+                            "VulnerabilityID": "CVE-1",
+                            "PkgName": "bar",
+                            "InstalledVersion": "2.0",
+                            "Severity": "LOW",
+                            "Title": "t",
+                        },
+                    ],
+                },
+            ],
+        }
+        vulns = TrivyParser().parse(data)
+        assert len(vulns) == 1
+
+    def test_can_parse_non_dict(self):
+        assert not TrivyParser().can_parse([])
+        assert not TrivyParser().can_parse("string")
+
+    def test_empty_results(self):
+        data = {"Results": []}
+        vulns = TrivyParser().parse(data)
+        assert vulns == []
+
+
+class TestPipAuditParser:
+    def test_can_parse_pip_audit(self, pip_audit_path):
+        data = json.loads(pip_audit_path.read_text())
+        parser = PipAuditParser()
+        assert parser.can_parse(data)
+
+    def test_cannot_parse_snyk(self, snyk_path):
+        data = json.loads(snyk_path.read_text())
+        parser = PipAuditParser()
+        assert not parser.can_parse(data)
+
+    def test_parse_pip_audit_vulns(self, pip_audit_path):
+        data = json.loads(pip_audit_path.read_text())
+        parser = PipAuditParser()
+        vulns = parser.parse(data)
+        assert len(vulns) == 3
+        ids = {v.id for v in vulns}
+        assert "PYSEC-2023-74" in ids
+        assert "PYSEC-2023-135" in ids
+        assert "PYSEC-2022-249" in ids
+
+    def test_skips_deps_without_vulns(self, pip_audit_path):
+        data = json.loads(pip_audit_path.read_text())
+        vulns = PipAuditParser().parse(data)
+        pkg_names = {v.package_name for v in vulns}
+        assert "flask" not in pkg_names
+
+    def test_includes_fix_versions_in_title(self, pip_audit_path):
+        data = json.loads(pip_audit_path.read_text())
+        vulns = PipAuditParser().parse(data)
+        requests_vuln = next(v for v in vulns if v.id == "PYSEC-2023-74")
+        assert "2.31.0" in requests_vuln.title
+
+    def test_deduplicates(self):
+        data = {
+            "dependencies": [
+                {
+                    "name": "foo",
+                    "version": "1.0",
+                    "vulns": [{"id": "V1", "description": "d"}],
+                },
+                {
+                    "name": "bar",
+                    "version": "2.0",
+                    "vulns": [{"id": "V1", "description": "d"}],
+                },
+            ],
+        }
+        vulns = PipAuditParser().parse(data)
+        assert len(vulns) == 1
+
+    def test_can_parse_non_dict(self):
+        assert not PipAuditParser().can_parse([])
+        assert not PipAuditParser().can_parse("string")
+
+    def test_empty_dependencies(self):
+        data = {"dependencies": []}
+        vulns = PipAuditParser().parse(data)
+        assert vulns == []
+
+
 class TestAutoDetect:
     def test_detects_snyk(self, snyk_path):
         parser = detect_parser(snyk_path)
@@ -190,6 +340,14 @@ class TestAutoDetect:
     def test_detects_dependabot(self, dependabot_path):
         parser = detect_parser(dependabot_path)
         assert isinstance(parser, DependabotParser)
+
+    def test_detects_trivy(self, trivy_path):
+        parser = detect_parser(trivy_path)
+        assert isinstance(parser, TrivyParser)
+
+    def test_detects_pip_audit(self, pip_audit_path):
+        parser = detect_parser(pip_audit_path)
+        assert isinstance(parser, PipAuditParser)
 
     def test_unknown_format_raises(self, tmp_path):
         bad = tmp_path / "unknown.json"

@@ -1,0 +1,39 @@
+{
+  "dependencies": [
+    {
+      "name": "requests",
+      "version": "2.28.0",
+      "vulns": [
+        {
+          "id": "PYSEC-2023-74",
+          "description": "Requests is a HTTP library that leaks Proxy-Authorization headers.",
+          "fix_versions": ["2.31.0"],
+          "aliases": ["CVE-2023-32681"]
+        }
+      ]
+    },
+    {
+      "name": "flask",
+      "version": "2.3.0",
+      "vulns": []
+    },
+    {
+      "name": "certifi",
+      "version": "2022.12.7",
+      "vulns": [
+        {
+          "id": "PYSEC-2023-135",
+          "description": "Certifi removes root certificates from e-Tugra.",
+          "fix_versions": ["2023.07.22"],
+          "aliases": ["CVE-2023-37920"]
+        },
+        {
+          "id": "PYSEC-2022-249",
+          "description": "Certifi 2022.12.07 removes TrustCor root certificates.",
+          "fix_versions": ["2022.12.07"],
+          "aliases": []
+        }
+      ]
+    }
+  ]
+}
