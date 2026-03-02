@@ -14,6 +14,21 @@ _VERDICT_LABELS = {
     Verdict.INCONCLUSIVE: "INCONCLUSIVE",
 }
 
+_SARIF_LEVELS = {
+    Verdict.REACHABLE: "error",
+    Verdict.INCONCLUSIVE: "warning",
+    Verdict.UNREACHABLE_STATIC: "note",
+    Verdict.UNREACHABLE_DYNAMIC: "note",
+}
+
+_SEVERITY_RANKS = {
+    "critical": "9.0",
+    "high": "7.0",
+    "medium": "4.0",
+    "low": "1.0",
+    "unknown": "0.0",
+}
+
 
 def report_to_dict(report: Report) -> dict:
     return {
@@ -132,4 +147,88 @@ def write_table(
 
     text = "\n".join(lines)
     output.write(text)
+    return text
+
+
+def write_sarif(report: Report, output: Path | TextIO | None = None) -> str:
+    """Write report in SARIF 2.1.0 format for GitHub Security tab integration."""
+    rules = []
+    results = []
+    seen_rule_ids: set[str] = set()
+
+    for r in report.results:
+        vuln = r.vulnerability
+        rule_id = vuln.id
+
+        if rule_id not in seen_rule_ids:
+            seen_rule_ids.add(rule_id)
+            rule = {
+                "id": rule_id,
+                "shortDescription": {"text": vuln.title or rule_id},
+                "helpUri": f"https://osv.dev/vulnerability/{rule_id}",
+                "properties": {
+                    "security-severity": _SEVERITY_RANKS.get(vuln.severity.lower(), "0.0"),
+                    "tags": ["security", "vulnerability"],
+                },
+            }
+            if vuln.description:
+                rule["fullDescription"] = {"text": vuln.description}
+            rules.append(rule)
+
+        message_parts = [
+            f"{vuln.package_name}@{vuln.package_version}: {vuln.title}",
+            f"Verdict: {_VERDICT_LABELS[r.verdict]}",
+            f"Reason: {r.reason}",
+        ]
+
+        result = {
+            "ruleId": rule_id,
+            "level": _SARIF_LEVELS[r.verdict],
+            "message": {"text": "\n".join(message_parts)},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": r.imported_as or vuln.package_name,
+                            "uriBaseId": "%SRCROOT%",
+                        },
+                    },
+                },
+            ],
+            "properties": {
+                "verdict": r.verdict.value,
+                "package": vuln.package_name,
+                "version": vuln.package_version,
+                "severity": vuln.severity,
+            },
+        }
+        if r.dependency_of:
+            result["properties"]["dependency_of"] = r.dependency_of
+        results.append(result)
+
+    sarif = {
+        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "ca9",
+                        "informationUri": "https://github.com/oha/ca9",
+                        "version": "0.1.0",
+                        "rules": rules,
+                    },
+                },
+                "results": results,
+            },
+        ],
+    }
+
+    text = json.dumps(sarif, indent=2)
+
+    if isinstance(output, Path):
+        output.write_text(text)
+    elif output is not None:
+        output.write(text)
+
     return text

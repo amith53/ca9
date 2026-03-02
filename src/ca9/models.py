@@ -75,3 +75,12 @@ class Report:
     @property
     def inconclusive_count(self) -> int:
         return sum(1 for r in self.results if r.verdict == Verdict.INCONCLUSIVE)
+
+    @property
+    def exit_code(self) -> int:
+        """Return CI-friendly exit code: 0=clean, 1=reachable found, 2=inconclusive only."""
+        if self.reachable_count > 0:
+            return 1
+        if self.inconclusive_count > 0:
+            return 2
+        return 0

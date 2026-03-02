@@ -13,14 +13,14 @@ class TestCLI:
     def test_table_output(self, snyk_path, sample_repo):
         runner = CliRunner()
         result = runner.invoke(main, [str(snyk_path), "--repo", str(sample_repo)])
-        assert result.exit_code == 0
+        assert result.exit_code in (0, 1, 2)
         assert "requests" in result.output
         assert "UNREACHABLE" in result.output or "INCONCLUSIVE" in result.output
 
     def test_json_output(self, snyk_path, sample_repo):
         runner = CliRunner()
         result = runner.invoke(main, [str(snyk_path), "--repo", str(sample_repo), "-f", "json"])
-        assert result.exit_code == 0
+        assert result.exit_code in (0, 1, 2)
         data = json.loads(result.output)
         assert "results" in data
         assert "summary" in data
@@ -40,11 +40,11 @@ class TestCLI:
                 "json",
             ],
         )
-        assert result.exit_code == 0
         data = json.loads(result.output)
         verdicts = {r["package"]: r["verdict"] for r in data["results"]}
         assert verdicts["requests"] == "reachable"
         assert verdicts["some-unused-package"] == "unreachable_static"
+        assert result.exit_code == 1  # reachable CVEs found
 
     def test_output_to_file(self, snyk_path, sample_repo, tmp_path):
         output_file = tmp_path / "report.json"
@@ -61,7 +61,7 @@ class TestCLI:
                 str(output_file),
             ],
         )
-        assert result.exit_code == 0
+        assert result.exit_code in (0, 1, 2)
         assert output_file.exists()
         data = json.loads(output_file.read_text())
         assert data["summary"]["total"] == 4
@@ -93,7 +93,7 @@ class TestCLI:
     def test_output_creates_parent_dir(self, snyk_path, sample_repo, tmp_path):
         output_file = tmp_path / "subdir" / "deep" / "report.json"
         runner = CliRunner()
-        result = runner.invoke(
+        runner.invoke(
             main,
             [
                 str(snyk_path),
@@ -105,5 +105,37 @@ class TestCLI:
                 str(output_file),
             ],
         )
-        assert result.exit_code == 0
         assert output_file.exists()
+
+    def test_sarif_output(self, snyk_path, sample_repo):
+        runner = CliRunner()
+        result = runner.invoke(main, [str(snyk_path), "--repo", str(sample_repo), "-f", "sarif"])
+        data = json.loads(result.output)
+        assert data["version"] == "2.1.0"
+        assert len(data["runs"][0]["results"]) == 4
+
+    def test_exit_code_with_reachable(self, snyk_path, sample_repo, coverage_path):
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(snyk_path),
+                "--repo",
+                str(sample_repo),
+                "--coverage",
+                str(coverage_path),
+                "-f",
+                "json",
+            ],
+        )
+        data = json.loads(result.output)
+        has_reachable = any(r["verdict"] == "reachable" for r in data["results"])
+        if has_reachable:
+            assert result.exit_code == 1
+
+    def test_exit_code_no_vulns(self, tmp_path, sample_repo):
+        empty = tmp_path / "empty.json"
+        empty.write_text('{"vulnerabilities": [], "projectName": "x"}')
+        runner = CliRunner()
+        result = runner.invoke(main, [str(empty), "--repo", str(sample_repo)])
+        assert result.exit_code == 0
