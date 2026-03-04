@@ -5,6 +5,22 @@ All notable changes to ca9 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-03-04
+
+### Added
+
+- **Vulnerability intelligence layer** — 21 curated rules across 6 packages (Django, Jinja2, PyYAML, requests, urllib3, Werkzeug) mapping advisories to 46 vulnerable API targets.
+- **API-level reachability** — AST-based scanner detects actual calls to vulnerable functions/classes/methods, not just package imports. Resolves aliased imports, attribute chains, and `from X import Y` patterns.
+- **API evidence in verdicts** — JSON/SARIF output now includes `api_targets`, `api_usage_seen`, `api_usage_hits` (with file, line, snippet), and `intel_rule_ids`.
+- **API-driven verdict upgrades** — finding vulnerable API calls can upgrade a verdict to REACHABLE even without coverage data.
+- **API-aware confidence scoring** — API usage boosts reachable confidence (+10–15), strengthens unreachable when no usage found (+8), penalizes contradictions.
+- 46 new tests (315 total).
+
+### Fixed
+
+- **Python 3.11 f-string syntax error** — ditto marks in table grouping used backslashes inside f-strings, which is only valid in 3.12+.
+- **Linting errors** — unused imports, Yoda conditions, non-idiomatic conditionals.
+
 ## [0.1.2] - 2026-03-04
 
 ### Added
