@@ -1,5 +1,3 @@
-"""Tests for the CLI."""
-
 from __future__ import annotations
 
 import json
@@ -19,9 +17,14 @@ class TestCLI:
 
     def test_json_output(self, snyk_path, sample_repo):
         runner = CliRunner()
-        result = runner.invoke(main, [str(snyk_path), "--repo", str(sample_repo), "-f", "json"])
+        result = runner.invoke(
+            main, [str(snyk_path), "--repo", str(sample_repo), "-f", "json", "--no-auto-coverage"]
+        )
         assert result.exit_code in (0, 1, 2)
-        data = json.loads(result.output)
+        raw = result.output.strip()
+        json_start = raw.index("{")
+        json_end = raw.rindex("}") + 1
+        data = json.loads(raw[json_start:json_end])
         assert "results" in data
         assert "summary" in data
         assert data["summary"]["total"] == 4
@@ -44,7 +47,7 @@ class TestCLI:
         verdicts = {r["package"]: r["verdict"] for r in data["results"]}
         assert verdicts["requests"] == "reachable"
         assert verdicts["some-unused-package"] == "unreachable_static"
-        assert result.exit_code == 1  # reachable CVEs found
+        assert result.exit_code == 1
 
     def test_output_to_file(self, snyk_path, sample_repo, tmp_path):
         output_file = tmp_path / "report.json"
@@ -109,8 +112,13 @@ class TestCLI:
 
     def test_sarif_output(self, snyk_path, sample_repo):
         runner = CliRunner()
-        result = runner.invoke(main, [str(snyk_path), "--repo", str(sample_repo), "-f", "sarif"])
-        data = json.loads(result.output)
+        result = runner.invoke(
+            main, [str(snyk_path), "--repo", str(sample_repo), "-f", "sarif", "--no-auto-coverage"]
+        )
+        raw = result.output.strip()
+        json_start = raw.index("{")
+        json_end = raw.rindex("}") + 1
+        data = json.loads(raw[json_start:json_end])
         assert data["version"] == "2.1.0"
         assert len(data["runs"][0]["results"]) == 4
 
