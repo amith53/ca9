@@ -174,11 +174,12 @@ def write_table(
         seen_vuln_pkg.add(group_key)
 
         if is_repeat:
+            ditto = '"'
             row_parts = [
                 f"{'  +' + r.vulnerability.package_version:<{id_w}}",
-                f"{'"':<{pkg_w}}",
-                f"{'"':<{sev_w}}",
-                f"{'"':<{ver_w}}",
+                f"{ditto:<{pkg_w}}",
+                f"{ditto:<{sev_w}}",
+                f"{ditto:<{ver_w}}",
             ]
             if show_confidence:
                 row_parts.append(f"{r.confidence_score:>4}")
