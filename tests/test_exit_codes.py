@@ -1,5 +1,3 @@
-"""Tests for exit code differentiation."""
-
 from __future__ import annotations
 
 from ca9.models import Report, Verdict, VerdictResult, Vulnerability

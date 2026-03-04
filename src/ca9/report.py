@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -30,6 +31,42 @@ _SEVERITY_RANKS = {
 }
 
 
+def _evidence_to_dict(evidence) -> dict | None:
+    if evidence is None:
+        return None
+    d = {
+        "version_in_range": evidence.version_in_range,
+        "dependency_kind": evidence.dependency_kind,
+        "package_imported": evidence.package_imported,
+        "submodule_imported": evidence.submodule_imported,
+        "affected_component_source": evidence.affected_component_source,
+        "affected_component_confidence": evidence.affected_component_confidence,
+        "coverage_seen": evidence.coverage_seen,
+        "coverage_files": list(evidence.coverage_files),
+        "external_fetch_warnings": list(evidence.external_fetch_warnings),
+    }
+    if evidence.api_targets:
+        d["api_targets"] = list(evidence.api_targets)
+    if evidence.api_usage_seen is not None:
+        d["api_usage_seen"] = evidence.api_usage_seen
+    if evidence.api_usage_confidence is not None:
+        d["api_usage_confidence"] = evidence.api_usage_confidence
+    if evidence.api_usage_hits:
+        d["api_usage_hits"] = [
+            {
+                "file": h.file_path,
+                "line": h.line,
+                "target": h.matched_target,
+                "type": h.match_type,
+                "snippet": h.code_snippet,
+            }
+            for h in evidence.api_usage_hits
+        ]
+    if evidence.intel_rule_ids:
+        d["intel_rule_ids"] = list(evidence.intel_rule_ids)
+    return d
+
+
 def report_to_dict(report: Report) -> dict:
     return {
         "repo_path": report.repo_path,
@@ -52,6 +89,7 @@ def report_to_dict(report: Report) -> dict:
                 "imported_as": r.imported_as,
                 "dependency_of": r.dependency_of,
                 "executed_files": r.executed_files,
+                "confidence_score": r.confidence_score,
                 "affected_component": (
                     {
                         "submodule_paths": list(r.affected_component.submodule_paths),
@@ -61,6 +99,7 @@ def report_to_dict(report: Report) -> dict:
                     if r.affected_component
                     else None
                 ),
+                "evidence": _evidence_to_dict(r.evidence),
             }
             for r in report.results
         ],
@@ -83,34 +122,41 @@ def write_table(
     report: Report,
     output: TextIO | None = None,
     verbose: bool = False,
+    show_confidence: bool = False,
+    show_evidence_source: bool = False,
 ) -> str:
     if output is None:
         output = sys.stdout
 
-    id_w = (
-        max(len("CVE ID"), *(len(r.vulnerability.id) for r in report.results))
-        if report.results
-        else len("CVE ID")
-    )
-    pkg_w = (
-        max(len("Package"), *(len(r.vulnerability.package_name) for r in report.results))
-        if report.results
-        else len("Package")
-    )
-    sev_w = (
-        max(len("Severity"), *(len(r.vulnerability.severity) for r in report.results))
-        if report.results
-        else len("Severity")
-    )
-    ver_w = (
-        max(len("Verdict"), *(len(_VERDICT_LABELS[r.verdict]) for r in report.results))
-        if report.results
-        else len("Verdict")
-    )
+    if report.results:
+        id_w = max(len("CVE ID"), *(len(r.vulnerability.id) for r in report.results))
+    else:
+        id_w = len("CVE ID")
+    if report.results:
+        pkg_w = max(len("Package"), *(len(r.vulnerability.package_name) for r in report.results))
+    else:
+        pkg_w = len("Package")
+    if report.results:
+        sev_w = max(len("Severity"), *(len(r.vulnerability.severity) for r in report.results))
+    else:
+        sev_w = len("Severity")
+    if report.results:
+        ver_w = max(len("Verdict"), *(len(_VERDICT_LABELS[r.verdict]) for r in report.results))
+    else:
+        ver_w = len("Verdict")
 
-    header = (
-        f"{'CVE ID':<{id_w}}  {'Package':<{pkg_w}}  {'Severity':<{sev_w}}  {'Verdict':<{ver_w}}"
-    )
+    header_parts = [
+        f"{'CVE ID':<{id_w}}",
+        f"{'Package':<{pkg_w}}",
+        f"{'Severity':<{sev_w}}",
+        f"{'Verdict':<{ver_w}}",
+    ]
+    if show_confidence:
+        header_parts.append(f"{'Conf':>4}")
+    if show_evidence_source:
+        header_parts.append(f"{'Source':<20}")
+
+    header = "  ".join(header_parts)
     sep = "-" * len(header)
 
     lines = [
@@ -119,12 +165,46 @@ def write_table(
         sep,
     ]
 
+    seen_vuln_pkg: set[tuple[str, str]] = set()
+
     for r in report.results:
         label = _VERDICT_LABELS[r.verdict]
-        row = f"{r.vulnerability.id:<{id_w}}  {r.vulnerability.package_name:<{pkg_w}}  {r.vulnerability.severity:<{sev_w}}  {label:<{ver_w}}"
-        lines.append(row)
-        if verbose:
-            lines.append(f"  {'':>{id_w}} -> {r.reason}")
+        group_key = (r.vulnerability.id, r.vulnerability.package_name.lower())
+        is_repeat = group_key in seen_vuln_pkg
+        seen_vuln_pkg.add(group_key)
+
+        if is_repeat:
+            row_parts = [
+                f"{'  +' + r.vulnerability.package_version:<{id_w}}",
+                f"{'\"':<{pkg_w}}",
+                f"{'\"':<{sev_w}}",
+                f"{'\"':<{ver_w}}",
+            ]
+            if show_confidence:
+                row_parts.append(f"{r.confidence_score:>4}")
+            if show_evidence_source:
+                row_parts.append(f"{'':<20}")
+            row = "  ".join(row_parts)
+            lines.append(row)
+        else:
+            row_parts = [
+                f"{r.vulnerability.id:<{id_w}}",
+                f"{r.vulnerability.package_name:<{pkg_w}}",
+                f"{r.vulnerability.severity:<{sev_w}}",
+                f"{label:<{ver_w}}",
+            ]
+            if show_confidence:
+                row_parts.append(f"{r.confidence_score:>4}")
+            if show_evidence_source:
+                source = ""
+                if r.evidence:
+                    source = r.evidence.affected_component_source[:20]
+                row_parts.append(f"{source:<20}")
+
+            row = "  ".join(row_parts)
+            lines.append(row)
+            if verbose:
+                lines.append(f"  {'':>{id_w}} -> {r.reason}")
 
     lines.append(sep)
     lines.append(
@@ -150,8 +230,12 @@ def write_table(
     return text
 
 
+def _stable_fingerprint(vuln_id: str, package: str, version: str, verdict: str) -> str:
+    data = f"{vuln_id}|{package}|{version}|{verdict}"
+    return hashlib.sha256(data.encode()).hexdigest()[:32]
+
+
 def write_sarif(report: Report, output: Path | TextIO | None = None) -> str:
-    """Write report in SARIF 2.1.0 format for GitHub Security tab integration."""
     rules = []
     results = []
     seen_rule_ids: set[str] = set()
@@ -181,10 +265,17 @@ def write_sarif(report: Report, output: Path | TextIO | None = None) -> str:
             f"Reason: {r.reason}",
         ]
 
+        fingerprint = _stable_fingerprint(
+            vuln.id, vuln.package_name, vuln.package_version, r.verdict.value
+        )
+
         result = {
             "ruleId": rule_id,
             "level": _SARIF_LEVELS[r.verdict],
             "message": {"text": "\n".join(message_parts)},
+            "fingerprints": {
+                "ca9/v1": fingerprint,
+            },
             "locations": [
                 {
                     "physicalLocation": {
@@ -200,8 +291,13 @@ def write_sarif(report: Report, output: Path | TextIO | None = None) -> str:
                 "package": vuln.package_name,
                 "version": vuln.package_version,
                 "severity": vuln.severity,
+                "confidence_score": r.confidence_score,
             },
         }
+
+        if r.evidence:
+            result["properties"]["evidence"] = _evidence_to_dict(r.evidence)
+
         if r.dependency_of:
             result["properties"]["dependency_of"] = r.dependency_of
         results.append(result)
@@ -215,7 +311,7 @@ def write_sarif(report: Report, output: Path | TextIO | None = None) -> str:
                     "driver": {
                         "name": "ca9",
                         "informationUri": "https://github.com/oha/ca9",
-                        "version": "0.1.1",
+                        "version": "0.1.2",
                         "rules": rules,
                     },
                 },
