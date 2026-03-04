@@ -213,9 +213,7 @@ def _write_cache(vuln_id: str, data: dict) -> None:
 def _is_retryable(exc: Exception) -> bool:
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in (429, 500, 502, 503, 504)
-    if isinstance(exc, (urllib.error.URLError, OSError)):
-        return True
-    return False
+    return isinstance(exc, (urllib.error.URLError, OSError))
 
 
 def _fetch_vuln_details(vuln_id: str, offline: bool = False) -> dict:
@@ -377,7 +375,7 @@ def _query_from_cache_only(packages: list[tuple[str, str]]) -> list[Vulnerabilit
     cached_vulns: dict[str, dict] = {}
     try:
         for path in CACHE_DIR.iterdir():
-            if not path.suffix == ".json":
+            if path.suffix != ".json":
                 continue
             if time.time() - path.stat().st_mtime > CACHE_TTL_SECONDS:
                 continue

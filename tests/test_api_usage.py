@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
 from ca9.analysis.api_usage import (
-    FileSymbolIndex,
     build_file_index,
     find_api_usage,
     scan_file_for_api_usage,

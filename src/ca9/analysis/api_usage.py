@@ -196,10 +196,7 @@ def _match_fqname(resolved: str, fqname_set: set[str]) -> str | None:
 
 
 def _is_call_child(node: ast.Name, tree: ast.Module) -> bool:
-    for parent in ast.walk(tree):
-        if isinstance(parent, ast.Call) and parent.func is node:
-            return True
-    return False
+    return any(isinstance(parent, ast.Call) and parent.func is node for parent in ast.walk(tree))
 
 
 def find_api_usage(
