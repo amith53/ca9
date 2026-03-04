@@ -18,7 +18,7 @@ PYPI_TO_IMPORT: dict[str, str] = {
     "msgpack-python": "msgpack",
     "opencv-python": "cv2",
     "opencv-python-headless": "cv2",
-    "pillow": "pil",
+    "pillow": "PIL",
     "protobuf": "google.protobuf",
     "pyasn1": "pyasn1",
     "pycryptodome": "crypto",

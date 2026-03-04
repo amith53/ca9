@@ -1,5 +1,3 @@
-"""Tests for coverage reader."""
-
 from __future__ import annotations
 
 from ca9.analysis.coverage_reader import (

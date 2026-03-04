@@ -1,5 +1,3 @@
-"""Tests for AST import scanner."""
-
 from __future__ import annotations
 
 from ca9.analysis.ast_scanner import (
@@ -19,7 +17,7 @@ class TestPypiToImportName:
         assert pypi_to_import_name("my-package") == "my_package"
 
     def test_pillow(self):
-        assert pypi_to_import_name("Pillow") == "pil"
+        assert pypi_to_import_name("Pillow") == "PIL"
 
     def test_pyyaml(self):
         assert pypi_to_import_name("PyYAML") == "yaml"
@@ -56,7 +54,6 @@ class TestCollectImports:
         assert "PIL.Image" in imports
 
     def test_from_import_records_dotted_names(self):
-        """from X import Y records both X and X.Y for submodule matching."""
         source = "from jinja2 import sandbox, Environment\n"
         imports = collect_imports_from_source(source)
         assert "jinja2" in imports
