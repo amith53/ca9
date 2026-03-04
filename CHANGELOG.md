@@ -15,16 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API-driven verdict upgrades** — finding vulnerable API calls can upgrade a verdict to REACHABLE even without coverage data.
 - **API-aware confidence scoring** — API usage boosts reachable confidence (+10–15), strengthens unreachable when no usage found (+8), penalizes contradictions.
 - 46 new tests (315 total).
-
-### Fixed
-
-- **Python 3.11 f-string syntax error** — ditto marks in table grouping used backslashes inside f-strings, which is only valid in 3.12+.
-- **Linting errors** — unused imports, Yoda conditions, non-idiomatic conditionals.
-
-## [0.1.2] - 2026-03-04
-
-### Added
-
 - **Evidence model** — every verdict now carries structured evidence (version range, import status, dependency kind, coverage, affected component source/confidence).
 - **Confidence scoring** — verdict-aware 0-100 confidence score. Signals boost or penalize depending on whether they support the verdict direction.
 - **Affected component inference** — commit analysis, curated mappings, regex extraction, and class name resolution each produce confidence-scored component matches.
@@ -50,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Python 3.11 f-string syntax error** — ditto marks in table grouping used backslashes inside f-strings, which is only valid in 3.12+.
+- **Linting errors** — unused imports, Yoda conditions, non-idiomatic conditionals.
 - **Duplicate `extract_affected_component()` call** — was computed twice per vulnerability (once in `collect_evidence`, once in `analyze`). Now computed once and passed through.
 - **`--offline` was a no-op** — `_query_from_cache_only()` was a stub. Now scans cache directory and matches cached vulns to requested packages.
 - **Version ranges without `introduced` skipped silently** — ranges missing the introduced field were dropped entirely.
