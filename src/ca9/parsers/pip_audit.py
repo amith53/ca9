@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ca9.models import Vulnerability
+from ca9.models import Vulnerability, finding_key
 
 
 class PipAuditParser:
@@ -13,7 +13,7 @@ class PipAuditParser:
 
     def parse(self, data: Any) -> list[Vulnerability]:
         vulns: list[Vulnerability] = []
-        seen_ids: set[str] = set()
+        seen: set[tuple[str, str, str]] = set()
 
         for dep in data.get("dependencies", []):
             if not isinstance(dep, dict):
@@ -25,9 +25,12 @@ class PipAuditParser:
                 if not isinstance(v, dict):
                     continue
                 vuln_id = v.get("id", "")
-                if not vuln_id or vuln_id in seen_ids:
+                if not vuln_id:
                     continue
-                seen_ids.add(vuln_id)
+                key = finding_key(vuln_id, pkg_name, pkg_version)
+                if key in seen:
+                    continue
+                seen.add(key)
 
                 description = v.get("description", "")
                 fix_versions = v.get("fix_versions", [])

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ca9.models import Vulnerability
+from ca9.models import Vulnerability, finding_key
 
 
 class DependabotParser:
@@ -16,7 +16,7 @@ class DependabotParser:
 
     def parse(self, data: Any) -> list[Vulnerability]:
         vulns: list[Vulnerability] = []
-        seen_ids: set[str] = set()
+        seen: set[tuple[str, str, str]] = set()
 
         for alert in data:
             if not isinstance(alert, dict):
@@ -29,16 +29,19 @@ class DependabotParser:
             vuln_id = advisory.get(
                 "ghsa_id", advisory.get("cve_id", f"ALERT-{alert.get('number', '?')}")
             )
+            pkg_name = pkg.get("name", "")
+            pkg_version = sec_vuln.get("vulnerable_version_range", "")
 
-            if vuln_id in seen_ids:
+            key = finding_key(vuln_id, pkg_name, pkg_version)
+            if key in seen:
                 continue
-            seen_ids.add(vuln_id)
+            seen.add(key)
 
             vulns.append(
                 Vulnerability(
                     id=vuln_id,
-                    package_name=pkg.get("name", ""),
-                    package_version=sec_vuln.get("vulnerable_version_range", ""),
+                    package_name=pkg_name,
+                    package_version=pkg_version,
                     severity=advisory.get("severity", "unknown"),
                     title=advisory.get("summary", ""),
                     description=advisory.get("description", ""),

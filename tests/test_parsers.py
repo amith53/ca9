@@ -1,5 +1,3 @@
-"""Tests for SCA report parsers."""
-
 from __future__ import annotations
 
 import json
@@ -304,7 +302,21 @@ class TestPipAuditParser:
         requests_vuln = next(v for v in vulns if v.id == "PYSEC-2023-74")
         assert "2.31.0" in requests_vuln.title
 
-    def test_deduplicates(self):
+    def test_deduplicates_same_package(self):
+        data = {
+            "dependencies": [
+                {
+                    "name": "foo",
+                    "version": "1.0",
+                    "vulns": [{"id": "V1", "description": "d"}, {"id": "V1", "description": "d"}],
+                },
+            ],
+        }
+        vulns = PipAuditParser().parse(data)
+        assert len(vulns) == 1
+
+    def test_same_cve_different_packages_preserved(self):
+        """Same CVE affecting different packages should produce separate findings."""
         data = {
             "dependencies": [
                 {
@@ -320,7 +332,9 @@ class TestPipAuditParser:
             ],
         }
         vulns = PipAuditParser().parse(data)
-        assert len(vulns) == 1
+        assert len(vulns) == 2
+        pkg_names = {v.package_name for v in vulns}
+        assert pkg_names == {"foo", "bar"}
 
     def test_can_parse_non_dict(self):
         assert not PipAuditParser().can_parse([])

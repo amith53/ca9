@@ -1,9 +1,7 @@
-"""Tests for version-range filtering."""
-
 from __future__ import annotations
 
 from ca9.models import VersionRange
-from ca9.version import is_version_affected
+from ca9.version import VersionCheckResult, check_version, is_version_affected
 
 
 class TestIsVersionAffected:
@@ -43,7 +41,6 @@ class TestIsVersionAffected:
         assert is_version_affected("1.6", ranges) is False
 
     def test_no_upper_bound(self):
-        """Range with introduced but no fixed/last_affected — all versions after introduced."""
         ranges = (VersionRange(introduced="1.0"),)
         assert is_version_affected("1.0", ranges) is True
         assert is_version_affected("99.0", ranges) is True
@@ -53,7 +50,6 @@ class TestIsVersionAffected:
         assert is_version_affected("1.0", ()) is None
 
     def test_no_introduced(self):
-        """Range without introduced is not usable."""
         ranges = (VersionRange(fixed="1.5"),)
         assert is_version_affected("1.0", ranges) is None
 
@@ -64,7 +60,79 @@ class TestIsVersionAffected:
         assert is_version_affected("2.0.9", ranges) is False
 
     def test_zero_introduced(self):
-        """introduced=0 means all versions before fixed."""
         ranges = (VersionRange(introduced="0", fixed="1.5"),)
         assert is_version_affected("0.1", ranges) is True
         assert is_version_affected("1.5", ranges) is False
+
+
+class TestPEP440:
+    def test_pre_release_less_than_release(self):
+        ranges = (VersionRange(introduced="0.9", fixed="1.0"),)
+        assert is_version_affected("1.0rc1", ranges) is True
+        assert is_version_affected("1.0", ranges) is False
+
+    def test_dev_release_less_than_release(self):
+        ranges = (VersionRange(introduced="0.9", fixed="1.0"),)
+        assert is_version_affected("1.0.dev1", ranges) is True
+
+    def test_post_release_greater_than_release(self):
+        ranges = (VersionRange(introduced="1.0", fixed="1.1"),)
+        assert is_version_affected("1.0.post1", ranges) is True
+
+    def test_epoch_overrides_version(self):
+        ranges = (VersionRange(introduced="0", fixed="3.0"),)
+        assert is_version_affected("1!1.0", ranges) is False
+
+    def test_alpha_beta_ordering(self):
+        ranges = (VersionRange(introduced="1.0a1", fixed="1.0"),)
+        assert is_version_affected("1.0a2", ranges) is True
+        assert is_version_affected("1.0b1", ranges) is True
+        assert is_version_affected("1.0rc1", ranges) is True
+        assert is_version_affected("1.0", ranges) is False
+
+    def test_exact_boundary_at_fixed(self):
+        ranges = (VersionRange(introduced="2.0.0", fixed="2.31.0"),)
+        assert is_version_affected("2.30.0", ranges) is True
+        assert is_version_affected("2.31.0", ranges) is False
+        assert is_version_affected("2.31.1", ranges) is False
+
+    def test_invalid_version_returns_none(self):
+        ranges = (VersionRange(introduced="1.0", fixed="2.0"),)
+        assert is_version_affected("not-a-version!!!", ranges) is None
+
+    def test_invalid_introduced_skipped(self):
+        ranges = (VersionRange(introduced="???", fixed="2.0"),)
+        assert is_version_affected("1.5", ranges) is None
+
+    def test_local_version(self):
+        ranges = (VersionRange(introduced="1.0", fixed="1.1"),)
+        assert is_version_affected("1.0+local", ranges) is True
+
+
+class TestCheckVersion:
+    def test_returns_matched_range(self):
+        r = VersionRange(introduced="1.0", fixed="2.0")
+        result = check_version("1.5", (r,))
+        assert result.affected is True
+        assert result.matched_range is r
+        assert result.installed is not None
+        assert str(result.installed) == "1.5"
+
+    def test_returns_not_affected(self):
+        r = VersionRange(introduced="1.0", fixed="2.0")
+        result = check_version("2.5", (r,))
+        assert result.affected is False
+        assert result.matched_range is None
+
+    def test_invalid_version_has_error(self):
+        r = VersionRange(introduced="1.0", fixed="2.0")
+        result = check_version("garbage!!!", (r,))
+        assert result.affected is None
+        assert result.installed is None
+        assert result.error is not None
+        assert "garbage" in result.error
+
+    def test_empty_ranges(self):
+        result = check_version("1.0", ())
+        assert result.affected is None
+        assert result.installed is not None

@@ -11,6 +11,7 @@ class AffectedComponent:
     file_hints: tuple[str, ...] = ()
     confidence: str = "low"
     extraction_source: str = ""
+    warnings: tuple[str, ...] = ()
 
 
 class Verdict(enum.Enum):
@@ -39,6 +40,48 @@ class Vulnerability:
     references: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class ApiTarget:
+    package: str
+    fqname: str
+    kind: str = "function"  # function, class, method, attribute, module
+    module: str | None = None
+    symbol: str | None = None
+    aliases: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+    rule_id: str = ""
+
+
+@dataclass(frozen=True)
+class ApiUsageHit:
+    file_path: str
+    line: int
+    col: int | None = None
+    match_type: str = "direct_call"  # direct_call, attribute_call, imported_symbol_call, class_instantiation, symbol_reference
+    matched_target: str = ""
+    code_snippet: str | None = None
+    confidence: int = 80
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Evidence:
+    version_in_range: bool | None = None
+    dependency_kind: str | None = None  # direct, transitive, none
+    package_imported: bool = False
+    submodule_imported: bool | None = None  # none = not checked
+    affected_component_source: str = ""
+    affected_component_confidence: int = 0  # 0-100
+    coverage_seen: bool | None = None  # none = no coverage data
+    coverage_files: tuple[str, ...] = ()
+    external_fetch_warnings: tuple[str, ...] = ()
+    api_targets: tuple[str, ...] = ()
+    api_usage_hits: tuple[ApiUsageHit, ...] = ()
+    api_usage_seen: bool | None = None  # none = not checked
+    api_usage_confidence: int | None = None
+    intel_rule_ids: tuple[str, ...] = ()
+
+
 @dataclass
 class VerdictResult:
     vulnerability: Vulnerability
@@ -48,6 +91,12 @@ class VerdictResult:
     executed_files: list[str] = field(default_factory=list)
     dependency_of: str | None = None
     affected_component: AffectedComponent | None = None
+    evidence: Evidence | None = None
+    confidence_score: int = 0  # 0-100
+
+
+def finding_key(vuln_id: str, package_name: str, package_version: str) -> tuple[str, str, str]:
+    return (vuln_id, package_name.lower(), package_version)
 
 
 @dataclass
@@ -78,7 +127,6 @@ class Report:
 
     @property
     def exit_code(self) -> int:
-        """Return CI-friendly exit code: 0=clean, 1=reachable found, 2=inconclusive only."""
         if self.reachable_count > 0:
             return 1
         if self.inconclusive_count > 0:
