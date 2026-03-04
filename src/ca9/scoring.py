@@ -4,20 +4,16 @@ from ca9.models import Evidence, Verdict
 
 
 def _api_usage_boost(ev: Evidence) -> int:
-    """Boost for API-level reachability evidence."""
     if ev.api_usage_seen is True:
-        # Strong signal: we found actual calls to vulnerable APIs
         if ev.api_usage_confidence and ev.api_usage_confidence >= 70:
             return 15
         return 10
     if ev.api_usage_seen is False and ev.api_targets:
-        # We had targets but found no usage — mild negative signal
         return -5
     return 0
 
 
 def _intel_rule_boost(ev: Evidence) -> int:
-    """Boost for having matched intel rules (structured knowledge)."""
     if ev.intel_rule_ids:
         return 3
     return 0
@@ -92,11 +88,10 @@ def _score_unreachable_static(ev: Evidence) -> int:
     elif ev.affected_component_confidence < 25:
         score -= 3
 
-    # API usage: no usage strengthens unreachable verdict
     if ev.api_usage_seen is False and ev.api_targets:
         score += 8
     elif ev.api_usage_seen is True:
-        score -= 10  # contradicts unreachable verdict
+        score -= 10
     score += _intel_rule_boost(ev)
 
     if ev.external_fetch_warnings:
@@ -133,11 +128,10 @@ def _score_unreachable_dynamic(ev: Evidence) -> int:
     elif ev.dependency_kind == "transitive":
         score -= 3
 
-    # API usage: no usage strengthens unreachable verdict
     if ev.api_usage_seen is False and ev.api_targets:
         score += 8
     elif ev.api_usage_seen is True:
-        score -= 10  # contradicts unreachable verdict
+        score -= 10
     score += _intel_rule_boost(ev)
 
     if ev.external_fetch_warnings:
@@ -162,11 +156,10 @@ def _score_inconclusive(ev: Evidence) -> int:
     elif ev.dependency_kind == "transitive":
         score -= 5
 
-    # API usage can tip inconclusive toward more certainty
     if ev.api_usage_seen is True:
         score += 10
     elif ev.api_usage_seen is False and ev.api_targets:
-        score += 5  # no usage found = slightly more confident in inconclusive
+        score += 5
     score += _intel_rule_boost(ev)
 
     if ev.external_fetch_warnings:

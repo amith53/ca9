@@ -11,9 +11,18 @@ from pathlib import Path
 
 from ca9.models import AffectedComponent, Vulnerability
 
-_GENERIC_SUBMODULE_NAMES = frozenset({
-    "utils", "base", "common", "helpers", "core", "misc", "compat", "exceptions",
-})
+_GENERIC_SUBMODULE_NAMES = frozenset(
+    {
+        "utils",
+        "base",
+        "common",
+        "helpers",
+        "core",
+        "misc",
+        "compat",
+        "exceptions",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -88,9 +97,9 @@ _CURATED: dict[str, list[tuple[re.Pattern[str], tuple[str, ...], tuple[str, ...]
 
 _GITHUB_COMMIT_RE = re.compile(r"https://github\.com/([^/]+/[^/]+)/commit/([0-9a-f]{7,40})")
 
-_COMMIT_CACHE_DIR = Path(
-    os.environ.get("CA9_CACHE_DIR", Path.home() / ".cache" / "ca9")
-) / "commits"
+_COMMIT_CACHE_DIR = (
+    Path(os.environ.get("CA9_CACHE_DIR", Path.home() / ".cache" / "ca9")) / "commits"
+)
 _COMMIT_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days (commits are immutable)
 
 

@@ -54,10 +54,7 @@ class TestBuildFileIndex:
 
 class TestScanFileForApiUsage:
     def _targets(self, *fqnames):
-        return [
-            ApiTarget(package="test", fqname=fq, kind="function")
-            for fq in fqnames
-        ]
+        return [ApiTarget(package="test", fqname=fq, kind="function") for fq in fqnames]
 
     def test_direct_module_call(self):
         source = "import requests\nresp = requests.get('http://x')\n"
@@ -104,9 +101,7 @@ class TestScanFileForApiUsage:
 
     def test_symbol_reference_not_call(self):
         source = "from yaml import UnsafeLoader\ncallback = UnsafeLoader\n"
-        targets = [
-            ApiTarget(package="pyyaml", fqname="yaml.UnsafeLoader", kind="class")
-        ]
+        targets = [ApiTarget(package="pyyaml", fqname="yaml.UnsafeLoader", kind="class")]
         hits = scan_file_for_api_usage("t.py", source, targets)
         assert len(hits) >= 1
         ref_hits = [h for h in hits if h.match_type == "symbol_reference"]
@@ -158,12 +153,8 @@ class TestScanFileForApiUsage:
 
 class TestFindApiUsage:
     def test_scan_repo(self, tmp_path):
-        (tmp_path / "app.py").write_text(
-            "import requests\nrequests.get('http://x')\n"
-        )
-        (tmp_path / "util.py").write_text(
-            "from yaml import load\nload('x')\n"
-        )
+        (tmp_path / "app.py").write_text("import requests\nrequests.get('http://x')\n")
+        (tmp_path / "util.py").write_text("from yaml import load\nload('x')\n")
         targets = [
             ApiTarget(package="requests", fqname="requests.get"),
             ApiTarget(package="pyyaml", fqname="yaml.load"),

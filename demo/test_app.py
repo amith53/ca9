@@ -33,10 +33,12 @@ def test_health(client):
 def test_weather_default_city(mock_get, client):
     mock_resp = MagicMock()
     mock_resp.json.return_value = {
-        "current_condition": [{
-            "temp_C": "28",
-            "weatherDesc": [{"value": "Partly cloudy"}],
-        }]
+        "current_condition": [
+            {
+                "temp_C": "28",
+                "weatherDesc": [{"value": "Partly cloudy"}],
+            }
+        ]
     }
     mock_resp.raise_for_status = MagicMock()
     mock_get.return_value = mock_resp
@@ -53,10 +55,12 @@ def test_weather_default_city(mock_get, client):
 def test_weather_custom_city(mock_get, client):
     mock_resp = MagicMock()
     mock_resp.json.return_value = {
-        "current_condition": [{
-            "temp_C": "15",
-            "weatherDesc": [{"value": "Rainy"}],
-        }]
+        "current_condition": [
+            {
+                "temp_C": "15",
+                "weatherDesc": [{"value": "Rainy"}],
+            }
+        ]
     }
     mock_resp.raise_for_status = MagicMock()
     mock_get.return_value = mock_resp

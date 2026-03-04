@@ -176,9 +176,9 @@ def write_table(
         if is_repeat:
             row_parts = [
                 f"{'  +' + r.vulnerability.package_version:<{id_w}}",
-                f"{'\"':<{pkg_w}}",
-                f"{'\"':<{sev_w}}",
-                f"{'\"':<{ver_w}}",
+                f"{'"':<{pkg_w}}",
+                f"{'"':<{sev_w}}",
+                f"{'"':<{ver_w}}",
             ]
             if show_confidence:
                 row_parts.append(f"{r.confidence_score:>4}")

@@ -30,11 +30,15 @@ def weather():
     resp = requests.get(f"{WEATHER_API}/{city}?format=j1", timeout=5)
     resp.raise_for_status()
     data = resp.json()
-    return jsonify({
-        "city": city,
-        "temp_c": data.get("current_condition", [{}])[0].get("temp_C"),
-        "description": data.get("current_condition", [{}])[0].get("weatherDesc", [{}])[0].get("value"),
-    })
+    return jsonify(
+        {
+            "city": city,
+            "temp_c": data.get("current_condition", [{}])[0].get("temp_C"),
+            "description": data.get("current_condition", [{}])[0]
+            .get("weatherDesc", [{}])[0]
+            .get("value"),
+        }
+    )
 
 
 @app.route("/health")

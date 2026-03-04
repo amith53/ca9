@@ -147,9 +147,7 @@ class TestCommitAnalysis:
 
     @patch("ca9.analysis.vuln_matcher._fetch_commit_files")
     def test_commit_wins_over_curated(self, mock_fetch):
-        mock_fetch.return_value = CommitFetchResult(
-            status="ok", files=["src/jinja2/runtime.py"]
-        )
+        mock_fetch.return_value = CommitFetchResult(status="ok", files=["src/jinja2/runtime.py"])
         v = _vuln(
             "Jinja2",
             title="Sandbox escape in Jinja2",
@@ -179,9 +177,7 @@ class TestCommitAnalysis:
 
     @patch("ca9.analysis.vuln_matcher._fetch_commit_files")
     def test_commit_includes_file_hints(self, mock_fetch):
-        mock_fetch.return_value = CommitFetchResult(
-            status="ok", files=["src/jinja2/sandbox.py"]
-        )
+        mock_fetch.return_value = CommitFetchResult(status="ok", files=["src/jinja2/sandbox.py"])
         v = _vuln(
             "Jinja2",
             references=("https://github.com/pallets/jinja/commit/abc123def456a",),

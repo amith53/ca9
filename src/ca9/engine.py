@@ -229,9 +229,7 @@ def derive_verdict(
             return VerdictResult(
                 vulnerability=vuln,
                 verdict=Verdict.UNREACHABLE_DYNAMIC,
-                reason=(
-                    f"{trace}, {submod_list} imported but 0 files executed in tests"
-                ),
+                reason=(f"{trace}, {submod_list} imported but 0 files executed in tests"),
                 imported_as=import_name,
                 dependency_of=dep_of,
                 affected_component=component,
@@ -277,9 +275,7 @@ def derive_verdict(
         return VerdictResult(
             vulnerability=vuln,
             verdict=Verdict.REACHABLE,
-            reason=(
-                f"{trace} and code was executed in {len(evidence.coverage_files)} file(s)"
-            ),
+            reason=(f"{trace} and code was executed in {len(evidence.coverage_files)} file(s)"),
             imported_as=import_name,
             executed_files=list(evidence.coverage_files),
             dependency_of=dep_of,
@@ -348,8 +344,14 @@ def analyze(
                 vuln_api_hits.extend(hits_by_target.get(t.fqname, []))
 
         evidence = collect_evidence(
-            vuln, import_name, repo_imports, transitive_deps, covered_files,
-            component, intel=intel, api_hits=vuln_api_hits,
+            vuln,
+            import_name,
+            repo_imports,
+            transitive_deps,
+            covered_files,
+            component,
+            intel=intel,
+            api_hits=vuln_api_hits,
         )
 
         if evidence.dependency_kind == "transitive":
@@ -358,7 +360,11 @@ def analyze(
             dep_of = None
 
         result = derive_verdict(
-            vuln, evidence, import_name, component, dep_of,
+            vuln,
+            evidence,
+            import_name,
+            component,
+            dep_of,
             has_coverage=covered_files is not None,
         )
         result.confidence_score = compute_confidence(evidence, result.verdict)

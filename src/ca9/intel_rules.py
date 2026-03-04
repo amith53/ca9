@@ -42,15 +42,26 @@ def _parse_version_specifiers(ranges: list[str]) -> tuple[SpecifierSet, ...]:
     return tuple(specs)
 
 
-def _parse_api_targets(raw_targets: list[dict], package: str, rule_id: str) -> tuple[ApiTarget, ...]:
+def _parse_api_targets(
+    raw_targets: list[dict], package: str, rule_id: str
+) -> tuple[ApiTarget, ...]:
     targets = []
     for t in raw_targets:
         fqname = t.get("fqname", "")
         if not fqname:
             continue
+
         parts = fqname.rsplit(".", 1)
-        module = parts[0] if len(parts) > 1 else None
-        symbol = parts[1] if len(parts) > 1 else fqname
+        if len(parts) > 1:
+            module = parts[0]
+        else:
+            module = None
+
+        if len(parts) > 1:
+            symbol = parts[1]
+        else:
+            symbol = fqname
+
         targets.append(
             ApiTarget(
                 package=package,
@@ -170,9 +181,7 @@ def resolve_vuln_intel(vuln: Vulnerability) -> VulnIntelResolution:
             continue
 
         if rule.version_specifiers:
-            version_ok = any(
-                vuln.package_version in spec for spec in rule.version_specifiers
-            )
+            version_ok = any(vuln.package_version in spec for spec in rule.version_specifiers)
             if not version_ok:
                 continue
 

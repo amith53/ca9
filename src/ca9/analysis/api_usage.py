@@ -187,7 +187,9 @@ def _match_fqname(resolved: str, fqname_set: set[str]) -> str | None:
         return resolved
 
     for fq in fqname_set:
-        if resolved.endswith(f".{fq.rsplit('.', 1)[-1]}") and resolved.startswith(fq.rsplit(".", 1)[0]):
+        if resolved.endswith(f".{fq.rsplit('.', 1)[-1]}") and resolved.startswith(
+            fq.rsplit(".", 1)[0]
+        ):
             return fq
 
     return None

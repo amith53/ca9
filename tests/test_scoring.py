@@ -229,9 +229,9 @@ class TestApiUsageScoring:
             api_usage_seen=False,
             api_targets=("requests.get",),
         )
-        assert compute_confidence(
-            no_api, Verdict.UNREACHABLE_STATIC
-        ) > compute_confidence(base, Verdict.UNREACHABLE_STATIC)
+        assert compute_confidence(no_api, Verdict.UNREACHABLE_STATIC) > compute_confidence(
+            base, Verdict.UNREACHABLE_STATIC
+        )
 
     def test_api_usage_contradicts_unreachable(self):
         unreachable_with_api = Evidence(
@@ -260,9 +260,9 @@ class TestApiUsageScoring:
             dependency_kind="direct",
             intel_rule_ids=("CA9-TEST-001",),
         )
-        assert compute_confidence(
-            with_rules, Verdict.REACHABLE
-        ) > compute_confidence(base, Verdict.REACHABLE)
+        assert compute_confidence(with_rules, Verdict.REACHABLE) > compute_confidence(
+            base, Verdict.REACHABLE
+        )
 
 
 class TestConfidenceBucket:

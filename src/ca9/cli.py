@@ -44,13 +44,17 @@ def _output_report(
         if output_path:
             with open(output_path, "w") as f:
                 write_table(
-                    report, f, verbose=verbose,
+                    report,
+                    f,
+                    verbose=verbose,
                     show_confidence=show_confidence,
                     show_evidence_source=show_evidence_source,
                 )
         else:
             write_table(
-                report, sys.stdout, verbose=verbose,
+                report,
+                sys.stdout,
+                verbose=verbose,
                 show_confidence=show_confidence,
                 show_evidence_source=show_evidence_source,
             )
@@ -197,8 +201,12 @@ def check(
 
     report = analyze(vulnerabilities, repo_path, coverage_path)
     _output_report(
-        report, output_format, output_path, verbose=verbose,
-        show_confidence=show_confidence, show_evidence_source=show_evidence_source,
+        report,
+        output_format,
+        output_path,
+        verbose=verbose,
+        show_confidence=show_confidence,
+        show_evidence_source=show_evidence_source,
     )
     sys.exit(report.exit_code)
 
@@ -326,8 +334,12 @@ def scan(
     )
     report = analyze(vulnerabilities, repo_path, coverage_path)
     _output_report(
-        report, output_format, output_path, verbose=verbose,
-        show_confidence=show_confidence, show_evidence_source=show_evidence_source,
+        report,
+        output_format,
+        output_path,
+        verbose=verbose,
+        show_confidence=show_confidence,
+        show_evidence_source=show_evidence_source,
     )
     sys.exit(report.exit_code)
 

@@ -237,7 +237,7 @@ def _fetch_vuln_details(vuln_id: str, offline: bool = False) -> dict:
             return data
         except Exception as exc:
             if attempt < MAX_RETRIES - 1 and _is_retryable(exc):
-                time.sleep(RETRY_BACKOFF_BASE * (2 ** attempt))
+                time.sleep(RETRY_BACKOFF_BASE * (2**attempt))
                 continue
             return {}
 
@@ -318,8 +318,7 @@ def query_osv_batch(
         effective_workers = 1
     with ThreadPoolExecutor(max_workers=effective_workers) as executor:
         future_to_id = {
-            executor.submit(_fetch_vuln_details, vid, offline): vid
-            for vid in unique_ids
+            executor.submit(_fetch_vuln_details, vid, offline): vid for vid in unique_ids
         }
         for future in as_completed(future_to_id):
             vid = future_to_id[future]
@@ -336,9 +335,7 @@ def query_osv_batch(
         else:
             severity = "unknown"
         if details:
-            title = (
-                details.get("summary", "") or details.get("details", "No description")[:120]
-            )
+            title = details.get("summary", "") or details.get("details", "No description")[:120]
         else:
             title = vuln_id
 
