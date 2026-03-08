@@ -1,5 +1,3 @@
-"""Acme weather dashboard — a small Flask API."""
-
 from flask import Flask, jsonify, request
 import requests
 import yaml
@@ -7,7 +5,6 @@ import colorama
 
 app = Flask(__name__)
 
-# Load config if available
 try:
     with open("config.yaml") as f:
         CONFIG = yaml.safe_load(f)
