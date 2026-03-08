@@ -5,6 +5,27 @@ All notable changes to ca9 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-03-08
+
+### Added
+
+- **MCP server** — `ca9-mcp` exposes ca9 as an MCP tool server with `check_reachability`, `scan_dependencies`, `check_coverage_quality`, and `explain_verdict` tools. Install with `pip install ca9[mcp]`.
+- **API call site coverage** — when coverage data is available, ca9 now checks whether specific vulnerable API call sites were executed in tests, not just whether the package was executed.
+- **Coverage completeness weighting** — confidence scoring now factors in overall test coverage percentage. High coverage (80%+) makes dynamic absence signals more trustworthy; low coverage reduces their weight.
+- **Coverage completeness in evidence** — `coverage_completeness_pct` field added to the Evidence model, surfaced in JSON/SARIF output.
+- 34 new tests (349 total).
+
+### Changed
+
+- **Verdict precision for API calls** — when vulnerable API calls are found but call sites are not executed in tests, verdict is now INCONCLUSIVE instead of REACHABLE.
+- **Code cleanup** — removed inline ternary expressions across parsers, scanner, CLI, and report modules for readability.
+- **Removed AI-generated comments** — stripped redundant phase comments and docstrings from engine.
+
+### Fixed
+
+- **Dead code in `_api_usage_boost`** — ternary assignment was immediately overwritten by an identical if/else block.
+- **Report column width** — deduplicated repeated if/else blocks for table column width calculation.
+
 ## [0.1.3] - 2026-03-04
 
 ### Added

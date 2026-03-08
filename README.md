@@ -172,6 +172,8 @@ Every verdict is backed by structured evidence. Use `--show-confidence` to see s
 | `package_imported` | Is the package imported anywhere in the repo? |
 | `submodule_imported` | Is the specific vulnerable submodule imported? |
 | `coverage_seen` | Was the vulnerable code executed during tests? |
+| `api_call_sites_covered` | Were specific vulnerable API call sites executed in tests? |
+| `coverage_completeness_pct` | Overall test coverage percentage — weights dynamic absence signals |
 | `affected_component_source` | How was the vulnerable component identified (commit analysis, curated mapping, regex, class scan)? |
 
 Confidence scoring is **verdict-directional** — evidence that supports the verdict boosts the score, evidence that contradicts it lowers it. A high confidence UNREACHABLE is different from a high confidence REACHABLE.
@@ -238,6 +240,35 @@ Set `GITHUB_TOKEN` to avoid GitHub API rate limits when ca9 fetches commit data 
 export GITHUB_TOKEN=ghp_...
 ca9 check snyk.json --repo .
 ```
+
+## MCP server
+
+ca9 ships an MCP server so LLM-powered tools (Claude Code, Cursor, etc.) can run reachability analysis directly.
+
+```bash
+pip install ca9[mcp]
+```
+
+Add to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "ca9": {
+      "command": "ca9-mcp"
+    }
+  }
+}
+```
+
+Available tools:
+
+| Tool | What it does |
+|------|-------------|
+| `check_reachability` | Analyze an SCA report (Snyk, Dependabot, Trivy, pip-audit) |
+| `scan_dependencies` | Scan installed packages via OSV.dev |
+| `check_coverage_quality` | Assess how reliable your coverage data is |
+| `explain_verdict` | Deep-dive a specific CVE's verdict with full evidence |
 
 ## Library usage
 
