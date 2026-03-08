@@ -10,6 +10,13 @@ def load_coverage(coverage_path: Path) -> dict:
     return json.loads(coverage_path.read_text())
 
 
+def get_coverage_completeness(coverage_data: dict) -> float | None:
+    totals = coverage_data.get("totals")
+    if totals and "percent_covered" in totals:
+        return totals["percent_covered"]
+    return None
+
+
 def get_covered_files(coverage_data: dict) -> dict[str, list[int]]:
     files: dict[str, list[int]] = {}
     file_data = coverage_data.get("files", {})
@@ -73,3 +80,41 @@ def is_submodule_executed(
                     break
 
     return bool(matching_files), matching_files
+
+
+def are_call_sites_covered(
+    call_sites: list[tuple[str, int]],
+    covered_files: dict[str, list[int]],
+) -> tuple[bool | None, int, int]:
+    if not call_sites:
+        return None, 0, 0
+
+    norm_to_lines: dict[str, set[int]] = {}
+    for filepath, lines in covered_files.items():
+        norm = filepath.replace("\\", "/")
+        norm_to_lines[norm] = set(lines)
+
+    covered_count = 0
+    matched_count = 0
+
+    for file_path, line in call_sites:
+        norm_path = file_path.replace("\\", "/")
+
+        executed_lines = norm_to_lines.get(norm_path)
+        if executed_lines is None:
+            for cov_path, lines_set in norm_to_lines.items():
+                if cov_path.endswith(norm_path) or norm_path.endswith(cov_path):
+                    executed_lines = lines_set
+                    break
+
+        if executed_lines is None:
+            continue
+
+        matched_count += 1
+        if line in executed_lines:
+            covered_count += 1
+
+    if matched_count == 0:
+        return None, 0, 0
+
+    return covered_count > 0, covered_count, matched_count

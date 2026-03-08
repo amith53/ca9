@@ -4,6 +4,13 @@
     "timestamp": "2024-01-15T10:30:00",
     "format": 3
   },
+  "totals": {
+    "covered_lines": 15,
+    "num_statements": 200,
+    "percent_covered": 75.0,
+    "missing_lines": 185,
+    "excluded_lines": 0
+  },
   "files": {
     "/usr/lib/python3.10/site-packages/requests/api.py": {
       "executed_lines": [1, 5, 10, 15, 20],

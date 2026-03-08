@@ -27,7 +27,10 @@ def build_file_index(file_path: str, source: str) -> FileSymbolIndex:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                name = alias.asname if alias.asname else alias.name
+                if alias.asname:
+                    name = alias.asname
+                else:
+                    name = alias.name
                 index.module_aliases[name] = alias.name
 
         elif isinstance(node, ast.ImportFrom):
@@ -36,7 +39,10 @@ def build_file_index(file_path: str, source: str) -> FileSymbolIndex:
             for alias in node.names:
                 if alias.name == "*":
                     continue
-                local_name = alias.asname if alias.asname else alias.name
+                if alias.asname:
+                    local_name = alias.asname
+                else:
+                    local_name = alias.name
                 fqname = f"{node.module}.{alias.name}"
                 index.symbol_aliases[local_name] = fqname
 
@@ -102,6 +108,23 @@ def _get_source_line(source_lines: list[str], lineno: int) -> str | None:
     return None
 
 
+_MATCH_TYPE_CONFIDENCE: dict[str, int] = {
+    "direct_call": 90,
+    "class_instantiation": 85,
+    "attribute_call": 80,
+    "imported_symbol_call": 75,
+    "symbol_reference": 50,
+}
+
+
+def _build_parent_map(tree: ast.Module) -> dict[int, ast.AST]:
+    parent_map: dict[int, ast.AST] = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parent_map[id(child)] = node
+    return parent_map
+
+
 def scan_file_for_api_usage(
     file_path: str,
     source: str,
@@ -125,6 +148,7 @@ def scan_file_for_api_usage(
     except SyntaxError:
         return []
 
+    parent_map = _build_parent_map(tree)
     source_lines = source.splitlines()
     hits: list[ApiUsageHit] = []
 
@@ -142,15 +166,16 @@ def scan_file_for_api_usage(
             if target is None:
                 continue
 
+            match_type = _classify_match(resolved, target)
             hits.append(
                 ApiUsageHit(
                     file_path=file_path,
                     line=node.lineno,
                     col=node.col_offset,
-                    match_type=_classify_match(resolved, target),
+                    match_type=match_type,
                     matched_target=matched_target,
                     code_snippet=_get_source_line(source_lines, node.lineno),
-                    confidence=80,
+                    confidence=_MATCH_TYPE_CONFIDENCE.get(match_type, 80),
                 )
             )
 
@@ -158,7 +183,7 @@ def scan_file_for_api_usage(
             if node.id in index.symbol_aliases:
                 resolved = index.symbol_aliases[node.id]
                 matched = _match_fqname(resolved, fqname_set)
-                if matched and not _is_call_child(node, tree):
+                if matched and not _is_call_func(node, parent_map):
                     hits.append(
                         ApiUsageHit(
                             file_path=file_path,
@@ -167,7 +192,7 @@ def scan_file_for_api_usage(
                             match_type="symbol_reference",
                             matched_target=matched,
                             code_snippet=_get_source_line(source_lines, node.lineno),
-                            confidence=60,
+                            confidence=_MATCH_TYPE_CONFIDENCE["symbol_reference"],
                         )
                     )
 
@@ -187,16 +212,23 @@ def _match_fqname(resolved: str, fqname_set: set[str]) -> str | None:
         return resolved
 
     for fq in fqname_set:
-        if resolved.endswith(f".{fq.rsplit('.', 1)[-1]}") and resolved.startswith(
-            fq.rsplit(".", 1)[0]
-        ):
+        if "." not in fq:
+            continue
+        fq_module, fq_symbol = fq.rsplit(".", 1)
+        if not resolved.endswith(f".{fq_symbol}"):
+            continue
+        resolved_module = resolved.rsplit(".", 1)[0]
+        fq_top = fq_module.split(".")[0]
+        resolved_top = resolved_module.split(".")[0]
+        if fq_top == resolved_top:
             return fq
 
     return None
 
 
-def _is_call_child(node: ast.Name, tree: ast.Module) -> bool:
-    return any(isinstance(parent, ast.Call) and parent.func is node for parent in ast.walk(tree))
+def _is_call_func(node: ast.Name, parent_map: dict[int, ast.AST]) -> bool:
+    parent = parent_map.get(id(node))
+    return isinstance(parent, ast.Call) and parent.func is node
 
 
 def find_api_usage(

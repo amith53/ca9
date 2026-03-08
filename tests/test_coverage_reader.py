@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from ca9.analysis.coverage_reader import (
+    are_call_sites_covered,
+    get_coverage_completeness,
     get_covered_files,
     is_package_executed,
     is_submodule_executed,
@@ -12,7 +14,6 @@ class TestGetCoveredFiles:
     def test_extracts_files_with_lines(self, coverage_path):
         data = load_coverage(coverage_path)
         files = get_covered_files(data)
-        # yaml has empty executed_lines, so should not appear
         assert len(files) == 3
         assert any("requests/api.py" in f for f in files)
 
@@ -21,6 +22,19 @@ class TestGetCoveredFiles:
         files = get_covered_files(data)
         yaml_files = [f for f in files if "yaml" in f]
         assert len(yaml_files) == 0
+
+
+class TestGetCoverageCompleteness:
+    def test_get_coverage_completeness_with_totals(self):
+        data = {"totals": {"percent_covered": 85.3}}
+        assert get_coverage_completeness(data) == 85.3
+
+    def test_get_coverage_completeness_no_totals(self):
+        data = {"files": {}, "meta": {}}
+        assert get_coverage_completeness(data) is None
+
+    def test_get_coverage_completeness_empty_data(self):
+        assert get_coverage_completeness({}) is None
 
 
 class TestIsPackageExecuted:
@@ -117,3 +131,85 @@ class TestIsSubmoduleExecuted:
         }
         executed, matching = is_submodule_executed(("werkzeug.debug",), (), covered)
         assert executed
+
+
+class TestAreCallSitesCovered:
+    def test_call_site_covered(self):
+        covered = {
+            "/repo/app.py": [1, 5, 10, 15, 20],
+            "/repo/utils.py": [1, 2, 3],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("/repo/app.py", 10)], covered
+        )
+        assert result is True
+        assert cov_count == 1
+        assert total == 1
+
+    def test_call_site_not_covered(self):
+        covered = {
+            "/repo/app.py": [1, 5, 10, 15, 20],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("/repo/app.py", 42)], covered
+        )
+        assert result is False
+        assert cov_count == 0
+        assert total == 1
+
+    def test_mixed_covered_and_uncovered(self):
+        covered = {
+            "/repo/app.py": [1, 5, 10],
+            "/repo/views.py": [1, 2, 3],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("/repo/app.py", 5), ("/repo/views.py", 99)], covered
+        )
+        assert result is True
+        assert cov_count == 1
+        assert total == 2
+
+    def test_no_call_sites(self):
+        covered = {"/repo/app.py": [1, 2]}
+        result, cov_count, total = are_call_sites_covered([], covered)
+        assert result is None
+        assert cov_count == 0
+        assert total == 0
+
+    def test_call_site_file_not_in_coverage(self):
+        covered = {"/repo/app.py": [1, 2, 3]}
+        result, cov_count, total = are_call_sites_covered(
+            [("/repo/other.py", 1)], covered
+        )
+        assert result is None
+        assert total == 0
+
+    def test_suffix_path_matching(self):
+        covered = {
+            "/full/path/to/repo/app.py": [1, 5, 10],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("repo/app.py", 5)], covered
+        )
+        assert result is True
+        assert cov_count == 1
+
+    def test_multiple_call_sites_all_covered(self):
+        covered = {
+            "/repo/app.py": [1, 5, 10, 20],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("/repo/app.py", 5), ("/repo/app.py", 10)], covered
+        )
+        assert result is True
+        assert cov_count == 2
+        assert total == 2
+
+    def test_windows_path_normalization(self):
+        covered = {
+            "C:\\repo\\app.py": [1, 5, 10],
+        }
+        result, cov_count, total = are_call_sites_covered(
+            [("C:/repo/app.py", 5)], covered
+        )
+        assert result is True

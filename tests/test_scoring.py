@@ -265,6 +265,142 @@ class TestApiUsageScoring:
         )
 
 
+class TestCallSiteCoverageScoring:
+    def test_call_sites_covered_boosts_reachable(self):
+        base = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_targets=("requests.get",),
+        )
+        with_sites = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_targets=("requests.get",),
+            api_call_sites_covered=True,
+        )
+        assert compute_confidence(with_sites, Verdict.REACHABLE) > compute_confidence(
+            base, Verdict.REACHABLE
+        )
+
+    def test_call_sites_not_covered_lowers_reachable(self):
+        with_sites = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_targets=("requests.get",),
+            api_call_sites_covered=True,
+        )
+        without_sites = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_targets=("requests.get",),
+            api_call_sites_covered=False,
+        )
+        assert compute_confidence(with_sites, Verdict.REACHABLE) > compute_confidence(
+            without_sites, Verdict.REACHABLE
+        )
+
+    def test_call_sites_not_covered_inconclusive_still_gets_api_credit(self):
+        base_inconclusive = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            affected_component_confidence=50,
+        )
+        with_api_not_covered = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            affected_component_confidence=50,
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_targets=("requests.get",),
+            api_call_sites_covered=False,
+        )
+        assert compute_confidence(
+            with_api_not_covered, Verdict.INCONCLUSIVE
+        ) > compute_confidence(base_inconclusive, Verdict.INCONCLUSIVE)
+
+
+class TestCoverageCompleteness:
+    def test_high_coverage_boosts_unreachable_dynamic(self):
+        evidence = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=90.0,
+        )
+        score = compute_confidence(evidence, Verdict.UNREACHABLE_DYNAMIC)
+        assert score >= 85
+
+    def test_low_coverage_reduces_unreachable_dynamic(self):
+        high_cov = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=90.0,
+        )
+        low_cov = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=20.0,
+        )
+        high_score = compute_confidence(high_cov, Verdict.UNREACHABLE_DYNAMIC)
+        low_score = compute_confidence(low_cov, Verdict.UNREACHABLE_DYNAMIC)
+        assert high_score > low_score
+
+    def test_coverage_trust_doesnt_affect_positive_execution(self):
+        low_pct = Evidence(
+            package_imported=True,
+            coverage_seen=True,
+            coverage_completeness_pct=20.0,
+        )
+        high_pct = Evidence(
+            package_imported=True,
+            coverage_seen=True,
+            coverage_completeness_pct=90.0,
+        )
+        assert compute_confidence(low_pct, Verdict.REACHABLE) == compute_confidence(
+            high_pct, Verdict.REACHABLE
+        )
+
+    def test_coverage_completeness_none_uses_moderate_trust(self):
+        none_pct = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=None,
+        )
+        high_pct = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=90.0,
+        )
+        low_pct = Evidence(
+            package_imported=True,
+            coverage_seen=False,
+            affected_component_confidence=80,
+            coverage_completeness_pct=20.0,
+        )
+        none_score = compute_confidence(none_pct, Verdict.UNREACHABLE_DYNAMIC)
+        high_score = compute_confidence(high_pct, Verdict.UNREACHABLE_DYNAMIC)
+        low_score = compute_confidence(low_pct, Verdict.UNREACHABLE_DYNAMIC)
+        assert low_score < none_score < high_score
+
+
 class TestConfidenceBucket:
     def test_high(self):
         assert confidence_bucket(80) == "high"
