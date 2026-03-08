@@ -153,7 +153,7 @@ class TestQueryOsvBatch:
     @patch("ca9.scanner.urllib.request.urlopen")
     def test_fetch_failure_graceful(self, mock_urlopen_fn, mock_fetch):
         mock_urlopen_fn.return_value = _mock_urlopen(_BATCH_SINGLE)
-        mock_fetch.return_value = {}  # Simulate fetch failure
+        mock_fetch.return_value = {}
 
         vulns = query_osv_batch([("example-pkg", "1.0.0")])
         assert len(vulns) == 1

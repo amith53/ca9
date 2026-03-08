@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import json
 
-from ca9.engine import analyze
-from ca9.models import Verdict, VersionRange, Vulnerability
+from ca9.engine import analyze, derive_verdict
+from ca9.models import (
+    AffectedComponent,
+    ApiUsageHit,
+    Evidence,
+    Verdict,
+    VersionRange,
+    Vulnerability,
+)
 
 
 def _make_vuln(
@@ -34,7 +41,6 @@ class TestAnalyze:
         assert report.results[0].verdict == Verdict.INCONCLUSIVE
 
     def test_imported_with_coverage_executed(self, sample_repo, coverage_path):
-        # requests is imported and executed → REACHABLE
         vulns = [_make_vuln("requests")]
         report = analyze(vulns, sample_repo, coverage_path)
         assert report.results[0].verdict == Verdict.REACHABLE
@@ -52,9 +58,7 @@ class TestAnalyze:
         report = analyze(vulns, sample_repo)
 
         verdicts = {r.vulnerability.package_name: r.verdict for r in report.results}
-        # requests.get() found in sample_repo → REACHABLE via API scanner
         assert verdicts["requests"] == Verdict.REACHABLE
-        # safe_load is not a vulnerable API target → still INCONCLUSIVE
         assert verdicts["PyYAML"] == Verdict.INCONCLUSIVE
         assert verdicts["Pillow"] == Verdict.INCONCLUSIVE
         assert verdicts["some-unused-package"] == Verdict.UNREACHABLE_STATIC
@@ -85,6 +89,15 @@ class TestAnalyze:
         assert r.imported_as == "requests"
         assert len(r.executed_files) > 0
         assert r.reason
+
+
+class TestCoverageCompletenessPropagation:
+    def test_coverage_completeness_propagated(self, sample_repo, coverage_path):
+        vulns = [_make_vuln("requests")]
+        report = analyze(vulns, sample_repo, coverage_path)
+        ev = report.results[0].evidence
+        assert ev is not None
+        assert ev.coverage_completeness_pct == 75.0
 
 
 class TestSubmoduleAnalysis:
@@ -180,6 +193,113 @@ class TestSubmoduleAnalysis:
         report = analyze(vulns, sample_repo)
         for r in report.results:
             assert r.affected_component is not None
+
+
+class TestApiCallSiteCoverage:
+    def _make_component(self, confidence="low"):
+        return AffectedComponent(
+            package_import_name="requests",
+            confidence=confidence,
+            extraction_source="test",
+        )
+
+    def test_api_found_call_sites_covered_reachable(self):
+        evidence = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_call_sites_covered=True,
+            api_usage_hits=(
+                ApiUsageHit(file_path="app.py", line=10, matched_target="requests.get"),
+            ),
+            api_targets=("requests.get",),
+            coverage_seen=True,
+            coverage_files=("site-packages/requests/api.py",),
+        )
+        result = derive_verdict(
+            _make_vuln("requests"),
+            evidence,
+            "requests",
+            self._make_component(),
+            dep_of=None,
+            has_coverage=True,
+        )
+        assert result.verdict == Verdict.REACHABLE
+        assert "call sites executed" in result.reason
+
+    def test_api_found_call_sites_not_covered_inconclusive(self):
+        evidence = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_call_sites_covered=False,
+            api_usage_hits=(
+                ApiUsageHit(file_path="app.py", line=10, matched_target="requests.get"),
+            ),
+            api_targets=("requests.get",),
+        )
+        result = derive_verdict(
+            _make_vuln("requests"),
+            evidence,
+            "requests",
+            self._make_component(),
+            dep_of=None,
+            has_coverage=True,
+        )
+        assert result.verdict == Verdict.INCONCLUSIVE
+        assert "not executed" in result.reason
+
+    def test_api_found_no_coverage_still_reachable(self):
+        evidence = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_call_sites_covered=None,
+            api_usage_hits=(
+                ApiUsageHit(file_path="app.py", line=10, matched_target="requests.get"),
+            ),
+            api_targets=("requests.get",),
+        )
+        result = derive_verdict(
+            _make_vuln("requests"),
+            evidence,
+            "requests",
+            self._make_component(),
+            dep_of=None,
+            has_coverage=False,
+        )
+        assert result.verdict == Verdict.REACHABLE
+
+    def test_api_found_coverage_none_but_package_executed(self):
+        evidence = Evidence(
+            version_in_range=True,
+            package_imported=True,
+            dependency_kind="direct",
+            api_usage_seen=True,
+            api_usage_confidence=80,
+            api_call_sites_covered=None,
+            api_usage_hits=(
+                ApiUsageHit(file_path="app.py", line=10, matched_target="requests.get"),
+            ),
+            api_targets=("requests.get",),
+            coverage_seen=True,
+            coverage_files=("site-packages/requests/api.py",),
+        )
+        result = derive_verdict(
+            _make_vuln("requests"),
+            evidence,
+            "requests",
+            self._make_component(),
+            dep_of=None,
+            has_coverage=True,
+        )
+        assert result.verdict == Verdict.REACHABLE
 
 
 class TestVersionRangeFiltering:

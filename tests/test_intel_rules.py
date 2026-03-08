@@ -113,7 +113,6 @@ class TestLoadRuleFromDict:
 class TestLoadBuiltinRules:
     def test_builtin_rules_load(self):
         _ensure_rules_loaded()
-        # We have 6 YAML files with 21+ rules
         from ca9.intel_rules import _BUILTIN_RULES, _RULES_BY_PACKAGE
 
         assert len(_BUILTIN_RULES) >= 10
@@ -200,10 +199,7 @@ class TestResolveVulnIntel:
             severity="high",
             title="Remote code execution via debug mode",
         )
-        # "debug" is a keyword in werkzeug rules, but this is django package
-        # Django rules have keywords like "admin", "session", etc.
         result = resolve_vuln_intel(vuln)
-        # May or may not match depending on keyword overlap — just verify no crash
         assert isinstance(result, VulnIntelResolution)
 
     def test_resolution_deduplicates_targets(self):

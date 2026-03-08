@@ -266,4 +266,4 @@ class TestSARIF:
         data = json.loads(write_sarif(report))
         fp1 = data["runs"][0]["results"][0]["fingerprints"]["ca9/v1"]
         fp2 = data["runs"][0]["results"][1]["fingerprints"]["ca9/v1"]
-        assert fp1 == fp2  # same vuln+pkg+version+verdict = same fingerprint
+        assert fp1 == fp2
