@@ -328,9 +328,9 @@ class TestCallSiteCoverageScoring:
             api_targets=("requests.get",),
             api_call_sites_covered=False,
         )
-        assert compute_confidence(
-            with_api_not_covered, Verdict.INCONCLUSIVE
-        ) > compute_confidence(base_inconclusive, Verdict.INCONCLUSIVE)
+        assert compute_confidence(with_api_not_covered, Verdict.INCONCLUSIVE) > compute_confidence(
+            base_inconclusive, Verdict.INCONCLUSIVE
+        )
 
 
 class TestCoverageCompleteness:

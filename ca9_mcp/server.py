@@ -19,7 +19,6 @@ def check_reachability(
     coverage_path: str | None = None,
     format: str = "json",
 ) -> str:
-
     from ca9.coverage_provider import resolve_coverage
     from ca9.engine import analyze
     from ca9.parsers import detect_parser
@@ -62,7 +61,6 @@ def scan_dependencies(
     repo_path: str = ".",
     coverage_path: str | None = None,
 ) -> str:
-
     from ca9.coverage_provider import resolve_coverage
     from ca9.engine import analyze
     from ca9.report import report_to_dict
@@ -77,10 +75,12 @@ def scan_dependencies(
     vulnerabilities = query_osv_batch(packages)
 
     if not vulnerabilities:
-        return json.dumps({
-            "message": "No known vulnerabilities found in installed packages.",
-            "packages_scanned": len(packages),
-        })
+        return json.dumps(
+            {
+                "message": "No known vulnerabilities found in installed packages.",
+                "packages_scanned": len(packages),
+            }
+        )
 
     report = analyze(vulnerabilities, repo, cov_path)
     result = report_to_dict(report)
@@ -93,7 +93,6 @@ def check_coverage_quality(
     coverage_path: str | None = None,
     repo_path: str = ".",
 ) -> str:
-
     from ca9.analysis.coverage_reader import (
         get_coverage_completeness,
         get_covered_files,
@@ -106,9 +105,11 @@ def check_coverage_quality(
     cov_path = resolve_coverage(cov_path, repo, auto_generate=False)
 
     if cov_path is None or not cov_path.is_file():
-        return json.dumps({
-            "error": "No coverage data found. Run pytest with pytest-cov or provide a coverage.json path.",
-        })
+        return json.dumps(
+            {
+                "error": "No coverage data found. Run pytest with pytest-cov or provide a coverage.json path.",
+            }
+        )
 
     coverage_data = load_coverage(cov_path)
     pct = get_coverage_completeness(coverage_data)
@@ -122,7 +123,9 @@ def check_coverage_quality(
         recommendation = "Dynamic absence signals are highly reliable."
     elif pct >= 50:
         trust_tier = "moderate"
-        recommendation = "Dynamic absence signals are moderately reliable. Increase coverage for better results."
+        recommendation = (
+            "Dynamic absence signals are moderately reliable. Increase coverage for better results."
+        )
     elif pct >= 30:
         trust_tier = "low"
         recommendation = "Coverage is sparse. Dynamic absence signals have limited reliability."
@@ -130,13 +133,16 @@ def check_coverage_quality(
         trust_tier = "very_low"
         recommendation = "Coverage is very sparse. Dynamic absence signals are almost meaningless."
 
-    return json.dumps({
-        "coverage_path": str(cov_path),
-        "percent_covered": pct,
-        "trust_tier": trust_tier,
-        "files_with_execution": len(covered_files),
-        "recommendation": recommendation,
-    }, indent=2)
+    return json.dumps(
+        {
+            "coverage_path": str(cov_path),
+            "percent_covered": pct,
+            "trust_tier": trust_tier,
+            "files_with_execution": len(covered_files),
+            "recommendation": recommendation,
+        },
+        indent=2,
+    )
 
 
 @mcp.tool()
@@ -145,7 +151,6 @@ def explain_verdict(
     package_name: str,
     repo_path: str = ".",
 ) -> str:
-
     from ca9.coverage_provider import resolve_coverage
     from ca9.engine import analyze
     from ca9.report import report_to_dict
@@ -158,15 +163,18 @@ def explain_verdict(
     vulnerabilities = query_osv_batch(packages)
 
     matching = [
-        v for v in vulnerabilities
+        v
+        for v in vulnerabilities
         if v.id == vuln_id or v.package_name.lower() == package_name.lower()
     ]
 
     if not matching:
-        return json.dumps({
-            "error": f"No vulnerability found matching id='{vuln_id}' and package='{package_name}'.",
-            "hint": "Run scan_dependencies first to see all known vulnerabilities.",
-        })
+        return json.dumps(
+            {
+                "error": f"No vulnerability found matching id='{vuln_id}' and package='{package_name}'.",
+                "hint": "Run scan_dependencies first to see all known vulnerabilities.",
+            }
+        )
 
     report = analyze(matching, repo, cov_path)
     data = report_to_dict(report)

@@ -139,9 +139,7 @@ class TestAreCallSitesCovered:
             "/repo/app.py": [1, 5, 10, 15, 20],
             "/repo/utils.py": [1, 2, 3],
         }
-        result, cov_count, total = are_call_sites_covered(
-            [("/repo/app.py", 10)], covered
-        )
+        result, cov_count, total = are_call_sites_covered([("/repo/app.py", 10)], covered)
         assert result is True
         assert cov_count == 1
         assert total == 1
@@ -150,9 +148,7 @@ class TestAreCallSitesCovered:
         covered = {
             "/repo/app.py": [1, 5, 10, 15, 20],
         }
-        result, cov_count, total = are_call_sites_covered(
-            [("/repo/app.py", 42)], covered
-        )
+        result, cov_count, total = are_call_sites_covered([("/repo/app.py", 42)], covered)
         assert result is False
         assert cov_count == 0
         assert total == 1
@@ -178,9 +174,7 @@ class TestAreCallSitesCovered:
 
     def test_call_site_file_not_in_coverage(self):
         covered = {"/repo/app.py": [1, 2, 3]}
-        result, cov_count, total = are_call_sites_covered(
-            [("/repo/other.py", 1)], covered
-        )
+        result, cov_count, total = are_call_sites_covered([("/repo/other.py", 1)], covered)
         assert result is None
         assert total == 0
 
@@ -188,9 +182,7 @@ class TestAreCallSitesCovered:
         covered = {
             "/full/path/to/repo/app.py": [1, 5, 10],
         }
-        result, cov_count, total = are_call_sites_covered(
-            [("repo/app.py", 5)], covered
-        )
+        result, cov_count, total = are_call_sites_covered([("repo/app.py", 5)], covered)
         assert result is True
         assert cov_count == 1
 
@@ -209,7 +201,5 @@ class TestAreCallSitesCovered:
         covered = {
             "C:\\repo\\app.py": [1, 5, 10],
         }
-        result, cov_count, total = are_call_sites_covered(
-            [("C:/repo/app.py", 5)], covered
-        )
+        result, cov_count, total = are_call_sites_covered([("C:/repo/app.py", 5)], covered)
         assert result is True
