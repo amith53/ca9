@@ -3,11 +3,30 @@ from __future__ import annotations
 from ca9.models import Evidence, Verdict
 
 
+def _coverage_trust(ev: Evidence) -> float:
+    if ev.coverage_completeness_pct is None:
+        return 0.5
+    pct = ev.coverage_completeness_pct
+    if pct >= 80:
+        return 1.0  # high trust
+    if pct >= 50:
+        return 0.7
+    if pct >= 30:
+        return 0.4  # low trust
+    return 0.2
+
+
 def _api_usage_boost(ev: Evidence) -> int:
     if ev.api_usage_seen is True:
         if ev.api_usage_confidence and ev.api_usage_confidence >= 70:
-            return 15
-        return 10
+            base = 15
+        else:
+            base = 10
+        if ev.api_call_sites_covered is True:
+            base += 5
+        elif ev.api_call_sites_covered is False:
+            base -= 8
+        return base
     if ev.api_usage_seen is False and ev.api_targets:
         return -5
     return 0
@@ -40,7 +59,7 @@ def _score_reachable(ev: Evidence) -> int:
     if ev.coverage_seen is True:
         score += 15
     elif ev.coverage_seen is False:
-        score -= 15
+        score -= int(15 * _coverage_trust(ev))
     elif ev.coverage_seen is None:
         score -= 5
 
@@ -104,7 +123,7 @@ def _score_unreachable_dynamic(ev: Evidence) -> int:
     score = 60
 
     if ev.coverage_seen is False:
-        score += 15
+        score += int(15 * _coverage_trust(ev))
     elif ev.coverage_seen is True:
         score -= 20
 
@@ -158,6 +177,8 @@ def _score_inconclusive(ev: Evidence) -> int:
 
     if ev.api_usage_seen is True:
         score += 10
+        if ev.api_call_sites_covered is False:
+            score += 3
     elif ev.api_usage_seen is False and ev.api_targets:
         score += 5
     score += _intel_rule_boost(ev)
