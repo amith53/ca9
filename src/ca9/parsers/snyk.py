@@ -8,7 +8,10 @@ from ca9.models import Vulnerability, finding_key
 class SnykParser:
     def can_parse(self, data: Any) -> bool:
         if isinstance(data, list):
-            data = data[0] if data else {}
+            if data:
+                data = data[0]
+            else:
+                data = {}
         return (
             isinstance(data, dict)
             and "vulnerabilities" in data
@@ -16,7 +19,10 @@ class SnykParser:
         )
 
     def parse(self, data: Any) -> list[Vulnerability]:
-        entries = data if isinstance(data, list) else [data]
+        if isinstance(data, list):
+            entries = data
+        else:
+            entries = [data]
 
         vulns: list[Vulnerability] = []
         seen: set[tuple[str, str, str]] = set()

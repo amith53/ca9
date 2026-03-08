@@ -35,7 +35,10 @@ class PipAuditParser:
                 description = v.get("description", "")
                 fix_versions = v.get("fix_versions", [])
 
-                title = description[:120] if description else vuln_id
+                if description:
+                    title = description[:120]
+                else:
+                    title = vuln_id
                 if fix_versions:
                     title = f"{title} (fix: {', '.join(fix_versions)})"
 

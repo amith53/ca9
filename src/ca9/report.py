@@ -62,9 +62,23 @@ def _evidence_to_dict(evidence) -> dict | None:
             }
             for h in evidence.api_usage_hits
         ]
+    if evidence.api_call_sites_covered is not None:
+        d["api_call_sites_covered"] = evidence.api_call_sites_covered
     if evidence.intel_rule_ids:
         d["intel_rule_ids"] = list(evidence.intel_rule_ids)
+    if evidence.coverage_completeness_pct is not None:
+        d["coverage_completeness_pct"] = evidence.coverage_completeness_pct
     return d
+
+
+def _component_to_dict(component) -> dict | None:
+    if component is None:
+        return None
+    return {
+        "submodule_paths": list(component.submodule_paths),
+        "confidence": component.confidence,
+        "extraction_source": component.extraction_source,
+    }
 
 
 def report_to_dict(report: Report) -> dict:
@@ -90,15 +104,7 @@ def report_to_dict(report: Report) -> dict:
                 "dependency_of": r.dependency_of,
                 "executed_files": r.executed_files,
                 "confidence_score": r.confidence_score,
-                "affected_component": (
-                    {
-                        "submodule_paths": list(r.affected_component.submodule_paths),
-                        "confidence": r.affected_component.confidence,
-                        "extraction_source": r.affected_component.extraction_source,
-                    }
-                    if r.affected_component
-                    else None
-                ),
+                "affected_component": _component_to_dict(r.affected_component),
                 "evidence": _evidence_to_dict(r.evidence),
             }
             for r in report.results
@@ -128,22 +134,15 @@ def write_table(
     if output is None:
         output = sys.stdout
 
-    if report.results:
-        id_w = max(len("CVE ID"), *(len(r.vulnerability.id) for r in report.results))
-    else:
-        id_w = len("CVE ID")
-    if report.results:
-        pkg_w = max(len("Package"), *(len(r.vulnerability.package_name) for r in report.results))
-    else:
-        pkg_w = len("Package")
-    if report.results:
-        sev_w = max(len("Severity"), *(len(r.vulnerability.severity) for r in report.results))
-    else:
-        sev_w = len("Severity")
-    if report.results:
-        ver_w = max(len("Verdict"), *(len(_VERDICT_LABELS[r.verdict]) for r in report.results))
-    else:
-        ver_w = len("Verdict")
+    def _col_width(label: str, getter) -> int:
+        if not report.results:
+            return len(label)
+        return max(len(label), *(len(getter(r)) for r in report.results))
+
+    id_w = _col_width("CVE ID", lambda r: r.vulnerability.id)
+    pkg_w = _col_width("Package", lambda r: r.vulnerability.package_name)
+    sev_w = _col_width("Severity", lambda r: r.vulnerability.severity)
+    ver_w = _col_width("Verdict", lambda r: _VERDICT_LABELS[r.verdict])
 
     header_parts = [
         f"{'CVE ID':<{id_w}}",

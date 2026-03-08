@@ -98,7 +98,10 @@ def main(ctx):
 
 
 def _get_config_default(ctx: click.Context, param_name: str, fallback):
-    config = ctx.obj.get("config", {}) if ctx.obj else {}
+    if ctx.obj:
+        config = ctx.obj.get("config", {})
+    else:
+        config = {}
     return config.get(param_name, fallback)
 
 

@@ -100,7 +100,7 @@ _GITHUB_COMMIT_RE = re.compile(r"https://github\.com/([^/]+/[^/]+)/commit/([0-9a
 _COMMIT_CACHE_DIR = (
     Path(os.environ.get("CA9_CACHE_DIR", Path.home() / ".cache" / "ca9")) / "commits"
 )
-_COMMIT_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days (commits are immutable)
+_COMMIT_CACHE_TTL = 7 * 24 * 60 * 60
 
 
 @dataclass
@@ -185,7 +185,10 @@ def _file_paths_to_submodules(
 
         fp_lower = fp.lower()
 
-        basename = fp.rsplit("/", 1)[-1] if "/" in fp else fp
+        if "/" in fp:
+            basename = fp.rsplit("/", 1)[-1]
+        else:
+            basename = fp
         if basename.startswith("test_") or basename == "conftest.py":
             continue
         if "/tests/" in fp_lower or "/test/" in fp_lower:
@@ -252,7 +255,10 @@ def _match_commits(
 
         for fp in result.files:
             if fp.endswith(".py"):
-                basename = fp.rsplit("/", 1)[-1] if "/" in fp else fp
+                if "/" in fp:
+                    basename = fp.rsplit("/", 1)[-1]
+                else:
+                    basename = fp
                 if not basename.startswith("test_") and basename != "conftest.py":
                     file_hints.add(basename)
 
@@ -388,7 +394,9 @@ def _find_package_source_dir(package_name: str) -> str | None:
 
     origin = spec.origin
     if origin.endswith("__init__.py"):
-        return str(origin.rsplit("/", 1)[0]) if "/" in origin else None
+        if "/" in origin:
+            return str(origin.rsplit("/", 1)[0])
+        return None
     return origin
 
 
@@ -446,7 +454,9 @@ def _scan_package_for_name(
                     dotted = rel.replace("/", ".")
                     if dotted.endswith(".__init__"):
                         dotted = dotted[:-9]
-                    return f"{import_name}.{dotted}" if dotted else import_name
+                    if dotted:
+                        return f"{import_name}.{dotted}"
+                    return import_name
 
     return None
 
